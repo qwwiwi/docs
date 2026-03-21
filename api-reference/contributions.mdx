@@ -5,9 +5,13 @@ description: "API для отправки и управления contributions:
 
 # Contributions API
 
-Contributions -- механизм вклада в экосистему EdgeLab. Любой участник на любом тарифе может предложить скилл, use case или урок. Одобренные работы публикуются в разделе Knowledge с указанием автора.
+Contributions -- механизм вклада в экосистему EdgeLab. Участники на тарифах Pro и VIP могут предложить скилл, use case или урок. Одобренные работы публикуются в разделе Knowledge с указанием автора.
 
 Подробнее о процессе -- в гайде [Как делать contributions](/guides/contributions).
+
+<Info>
+**Scope:** Для работы с Contributions API требуется scope `contributions:write`, доступный на тарифах **Pro** и **VIP**. Участники на тарифе Edge могут просматривать опубликованные contributions через Knowledge API.
+</Info>
 
 ---
 
@@ -31,7 +35,7 @@ Contributions -- механизм вклада в экосистему EdgeLab. 
 | `approved` | Одобрен -- публикуется в Knowledge |
 | `rejected` | Отклонён с комментарием |
 
-При одобрении contribution автоматически публикуется в разделе Knowledge с указанием автора. Все тарифы (Edge, Pro, VIP) могут быть контрибьюторами.
+При одобрении contribution автоматически публикуется в разделе Knowledge с указанием автора.
 
 <Info>
 **Вознаграждение:** 20% от подписок направляется в Governance Fund, из которого распределяются выплаты контрибьюторам.
@@ -43,7 +47,7 @@ Contributions -- механизм вклада в экосистему EdgeLab. 
 
 Отправить новый contribution на ревью. Требуется ссылка на публичный GitHub-репозиторий с материалом.
 
-**Scope:** `contributions:write` (все тарифы)
+**Scope:** `contributions:write` (Pro, VIP)
 
 **Полный URL:** `POST https://platform.edgelab.su/api/v1/contributions/submit`
 
@@ -77,7 +81,7 @@ Contributions -- механизм вклада в экосистему EdgeLab. 
 </ParamField>
 
 <ParamField body="github_url" type="string" required>
-  Ссылка на публичный GitHub-репозиторий с исходным материалом
+  Ссылка на публичный GitHub-репозиторий с исходным материалом. Принимаются только URL вида `https://github.com/...`
 </ParamField>
 
 ### Пример запроса
@@ -98,39 +102,38 @@ curl -X POST https://platform.edgelab.su/api/v1/contributions/submit \
 ```
 </CodeGroup>
 
-### Пример ответа
+### Пример ответа (201 Created)
 
 ```json
 {
-  "ok": true,
-  "data": {
-    "id": "contrib_8f3a2b",
-    "title": "AI Research Scout",
-    "type": "skill",
-    "status": "pending",
-    "description": "Скилл для автоматического мониторинга новых AI-публикаций на ArXiv",
-    "problem_solved": "Ручной мониторинг ArXiv занимает часы. Скилл автоматизирует поиск и фильтрацию",
-    "target_audience": "AI-разработчики и исследователи",
-    "github_url": "https://github.com/user/arxiv-scout-skill",
-    "author": {
-      "user_id": "usr_abc123",
-      "username": "researcher42"
-    },
-    "created_at": "2026-03-21T10:00:00Z"
+  "id": "contrib_8f3a2b",
+  "title": "AI Research Scout",
+  "type": "skill",
+  "status": "pending",
+  "description": "Скилл для автоматического мониторинга новых AI-публикаций на ArXiv",
+  "problem_solved": "Ручной мониторинг ArXiv занимает часы. Скилл автоматизирует поиск и фильтрацию",
+  "target_audience": "AI-разработчики и исследователи",
+  "github_url": "https://github.com/user/arxiv-scout-skill",
+  "author": {
+    "display_name": "researcher42"
   },
-  "meta": {
-    "request_id": "req_c001",
-    "api_version": "v1"
-  }
+  "created_at": "2026-03-21T10:00:00Z"
 }
 ```
 
 ### Ошибки
 
-| HTTP код | Когда |
-|----------|-------|
-| `401 Unauthorized` | Невалидный или отсутствующий API-ключ |
-| `422 Validation Error` | Невалидные данные: пустой title, неизвестный type, невалидный github_url |
+| HTTP код | Код ошибки | Когда |
+|----------|------------|-------|
+| 400 | `bad_request` | Невалидные параметры запроса |
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 403 | `forbidden` | Тариф Edge -- scope `contributions:write` недоступен |
+| 422 | `validation_error` | Невалидные данные: пустой title, неизвестный type, невалидный github_url |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
+
+<Warning>
+**GitHub-only:** Принимаются только ссылки вида `https://github.com/...`. Любые другие URL (GitLab, Bitbucket, произвольные домены) будут отклонены с ошибкой `422`.
+</Warning>
 
 ---
 
@@ -138,7 +141,7 @@ curl -X POST https://platform.edgelab.su/api/v1/contributions/submit \
 
 Получить список своих contributions с возможностью фильтрации по статусу.
 
-**Scope:** `contributions:write` (все тарифы)
+**Scope:** `contributions:write` (Pro, VIP)
 
 **Полный URL:** `GET https://platform.edgelab.su/api/v1/contributions/my`
 
@@ -154,19 +157,19 @@ curl -X POST https://platform.edgelab.su/api/v1/contributions/submit \
   Фильтр по статусу: `pending`, `approved`, `rejected`
 </ParamField>
 
-<ParamField query="page" type="integer" default="1">
-  Номер страницы
+<ParamField query="limit" type="integer" default="20">
+  Количество элементов (макс. 100)
 </ParamField>
 
-<ParamField query="per_page" type="integer" default="20">
-  Количество на странице (макс. 50)
+<ParamField query="offset" type="integer" default="0">
+  Смещение от начала списка
 </ParamField>
 
 ### Пример запроса
 
 <CodeGroup>
 ```bash cURL
-curl https://platform.edgelab.su/api/v1/contributions/my?status=approved \
+curl "https://platform.edgelab.su/api/v1/contributions/my?status=approved&limit=10&offset=0" \
   -H "Authorization: Bearer edgelab_live_abc123"
 ```
 </CodeGroup>
@@ -175,8 +178,7 @@ curl https://platform.edgelab.su/api/v1/contributions/my?status=approved \
 
 ```json
 {
-  "ok": true,
-  "data": [
+  "items": [
     {
       "id": "contrib_8f3a2b",
       "title": "AI Research Scout",
@@ -189,17 +191,20 @@ curl https://platform.edgelab.su/api/v1/contributions/my?status=approved \
       "reviewed_at": "2026-03-22T14:30:00Z"
     }
   ],
-  "meta": {
-    "request_id": "req_c002",
-    "api_version": "v1",
-    "pagination": {
-      "page": 1,
-      "per_page": 20,
-      "total": 1
-    }
-  }
+  "total": 1,
+  "limit": 10,
+  "offset": 0,
+  "has_more": false
 }
 ```
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|----------|------------|-------|
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 403 | `forbidden` | Тариф Edge -- scope `contributions:write` недоступен |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
 
 ---
 
@@ -207,7 +212,7 @@ curl https://platform.edgelab.su/api/v1/contributions/my?status=approved \
 
 Получить детальную информацию о конкретном contribution.
 
-**Scope:** `contributions:write` (все тарифы)
+**Scope:** `contributions:write` (Pro, VIP)
 
 **Полный URL:** `GET https://platform.edgelab.su/api/v1/contributions/{id}`
 
@@ -230,39 +235,33 @@ curl https://platform.edgelab.su/api/v1/contributions/contrib_8f3a2b \
 
 ```json
 {
-  "ok": true,
-  "data": {
-    "id": "contrib_8f3a2b",
-    "title": "AI Research Scout",
-    "type": "skill",
-    "status": "approved",
-    "description": "Скилл для автоматического мониторинга новых AI-публикаций на ArXiv",
-    "problem_solved": "Ручной мониторинг ArXiv занимает часы. Скилл автоматизирует поиск и фильтрацию",
-    "target_audience": "AI-разработчики и исследователи",
-    "github_url": "https://github.com/user/arxiv-scout-skill",
-    "author": {
-      "user_id": "usr_abc123",
-      "username": "researcher42"
-    },
-    "reviewer_comment": "Отличная работа, полезный скилл для сообщества",
-    "knowledge_url": "/knowledge/skills/arxiv-scout",
-    "created_at": "2026-03-21T10:00:00Z",
-    "reviewed_at": "2026-03-22T14:30:00Z"
+  "id": "contrib_8f3a2b",
+  "title": "AI Research Scout",
+  "type": "skill",
+  "status": "approved",
+  "description": "Скилл для автоматического мониторинга новых AI-публикаций на ArXiv",
+  "problem_solved": "Ручной мониторинг ArXiv занимает часы. Скилл автоматизирует поиск и фильтрацию",
+  "target_audience": "AI-разработчики и исследователи",
+  "github_url": "https://github.com/user/arxiv-scout-skill",
+  "author": {
+    "display_name": "researcher42"
   },
-  "meta": {
-    "request_id": "req_c003",
-    "api_version": "v1"
-  }
+  "reviewer_comment": "Отличная работа, полезный скилл для сообщества",
+  "knowledge_url": "/knowledge/skills/arxiv-scout",
+  "created_at": "2026-03-21T10:00:00Z",
+  "reviewed_at": "2026-03-22T14:30:00Z"
 }
 ```
 
 ### Ошибки
 
-| HTTP код | Когда |
-|----------|-------|
-| `401 Unauthorized` | Невалидный или отсутствующий API-ключ |
-| `404 Not Found` | Contribution с указанным ID не найден |
+| HTTP код | Код ошибки | Когда |
+|----------|------------|-------|
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 403 | `forbidden` | Тариф Edge -- scope `contributions:write` недоступен |
+| 404 | `not_found` | Contribution с указанным ID не найден |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
 
 <Note>
-**GitHub-only:** Все contributions принимаются исключительно через ссылку на публичный GitHub-репозиторий. Это обеспечивает прозрачность, версионирование и возможность community-ревью.
+**GitHub-only:** Все contributions принимаются исключительно через ссылку на публичный GitHub-репозиторий (`https://github.com/...`). Это обеспечивает прозрачность, версионирование и возможность community-ревью. Ссылки на другие хостинги (GitLab, Bitbucket и т.д.) будут отклонены с ошибкой `422`.
 </Note>

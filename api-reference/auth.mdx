@@ -1,9 +1,9 @@
 ---
-title: "Auth"
+title: "API Keys"
 description: "Управление API ключами: создание, ротация, отзыв и просмотр информации"
 ---
 
-# Auth endpoints
+# API Keys
 
 Endpoints для управления API ключами. Позволяют создавать новые ключи, ротировать существующие, отзывать скомпрометированные и просматривать информацию о текущем ключе.
 
@@ -52,22 +52,15 @@ print(data)
 ```
 </CodeGroup>
 
-### Пример ответа
+### Пример ответа (201 Created)
 
 ```json
 {
-  "ok": true,
-  "data": {
-    "key": "edgelab_live_f9e8d7c6b5a4f9e8d7c6b5a4f9e8d7c6",
-    "prefix": "edgelab_live_f9e8d7c6",
-    "name": "Мой второй агент",
-    "scopes": ["profile:read", "profile:write", "support:write", "knowledge:read", "contributions:write"],
-    "created_at": "2025-03-15T12:00:00Z"
-  },
-  "meta": {
-    "request_id": "req_abc123",
-    "api_version": "v1"
-  }
+  "key": "edgelab_live_f9e8d7c6b5a4f9e8d7c6b5a4f9e8d7c6",
+  "prefix": "edgelab_live_f9e8d7c6",
+  "name": "Мой второй агент",
+  "scopes": ["profile:read", "profile:write", "knowledge:read", "events:read", "network:read"],
+  "created_at": "2025-03-15T12:00:00Z"
 }
 ```
 
@@ -77,9 +70,13 @@ print(data)
 
 ### Ошибки
 
-| HTTP код | Когда |
-|---|---|
-| 409 Conflict | Уже есть 3 активных ключа. Отзови один перед созданием нового |
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 400 | `bad_request` | Невалидные параметры запроса |
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 403 | `forbidden` | Недостаточно прав |
+| 409 | `conflict` | Уже есть 3 активных ключа. Отзови один перед созданием нового |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
 
 ---
 
@@ -117,29 +114,35 @@ print(response.json())
 
 ```json
 {
-  "ok": true,
-  "data": [
+  "items": [
     {
       "prefix": "edgelab_live_a1b2c3d4",
       "name": "Основной агент",
-      "scopes": ["profile:read", "profile:write", "support:write", "knowledge:read", "contributions:write"],
+      "scopes": ["profile:read", "profile:write", "knowledge:read", "events:read", "network:read"],
       "created_at": "2025-01-10T08:00:00Z",
       "last_used_at": "2025-03-15T14:30:00Z"
     },
     {
       "prefix": "edgelab_live_f9e8d7c6",
       "name": "Мой второй агент",
-      "scopes": ["profile:read", "profile:write", "support:write", "knowledge:read", "contributions:write"],
+      "scopes": ["profile:read", "profile:write", "knowledge:read", "events:read", "network:read"],
       "created_at": "2025-03-15T12:00:00Z",
       "last_used_at": null
     }
   ],
-  "meta": {
-    "request_id": "req_def456",
-    "api_version": "v1"
-  }
+  "total": 2,
+  "limit": 20,
+  "offset": 0,
+  "has_more": false
 }
 ```
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
 
 ---
 
@@ -190,23 +193,25 @@ print(data)
 
 ```json
 {
-  "ok": true,
-  "data": {
-    "old_prefix": "edgelab_live_f9e8d7c6",
-    "new_key": "edgelab_live_1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d",
-    "new_prefix": "edgelab_live_1a2b3c4d",
-    "rotated_at": "2025-03-15T15:00:00Z"
-  },
-  "meta": {
-    "request_id": "req_rot789",
-    "api_version": "v1"
-  }
+  "old_prefix": "edgelab_live_f9e8d7c6",
+  "new_key": "edgelab_live_1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d",
+  "new_prefix": "edgelab_live_1a2b3c4d",
+  "rotated_at": "2025-03-15T15:00:00Z"
 }
 ```
 
 <Warning>
 После ротации старый ключ **немедленно** перестаёт работать. Обнови ключ во всех агентах, которые его используют.
 </Warning>
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 400 | `bad_request` | Невалидный префикс |
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 404 | `not_found` | Ключ с указанным префиксом не найден |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
 
 ---
 
@@ -256,21 +261,23 @@ print(response.json())
 
 ```json
 {
-  "ok": true,
-  "data": {
-    "prefix": "edgelab_live_f9e8d7c6",
-    "revoked_at": "2025-03-15T16:00:00Z"
-  },
-  "meta": {
-    "request_id": "req_rev012",
-    "api_version": "v1"
-  }
+  "prefix": "edgelab_live_f9e8d7c6",
+  "revoked_at": "2025-03-15T16:00:00Z"
 }
 ```
 
 <Note>
 Нельзя отозвать ключ, которым ты аутентифицирован в текущем запросе. Используй другой ключ для отзыва.
 </Note>
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 400 | `bad_request` | Невалидный префикс или попытка отозвать текущий ключ |
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 404 | `not_found` | Ключ с указанным префиксом не найден |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
 
 ---
 
@@ -308,19 +315,19 @@ print(response.json())
 
 ```json
 {
-  "ok": true,
-  "data": {
-    "prefix": "edgelab_live_a1b2c3d4",
-    "name": "Основной агент",
-    "owner_id": "usr_abc123",
-    "tier": "edge",
-    "scopes": ["profile:read", "profile:write", "support:write", "knowledge:read", "contributions:write"],
-    "created_at": "2025-01-10T08:00:00Z",
-    "last_used_at": "2025-03-15T14:30:00Z"
-  },
-  "meta": {
-    "request_id": "req_me345",
-    "api_version": "v1"
-  }
+  "prefix": "edgelab_live_a1b2c3d4",
+  "name": "Основной агент",
+  "owner_id": "usr_abc123",
+  "tier": "edge",
+  "scopes": ["profile:read", "profile:write", "knowledge:read", "events:read", "network:read"],
+  "created_at": "2025-01-10T08:00:00Z",
+  "last_used_at": "2025-03-15T14:30:00Z"
 }
 ```
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |

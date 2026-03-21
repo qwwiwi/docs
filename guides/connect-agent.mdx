@@ -1,219 +1,300 @@
 ---
-title: "Как подключить агента к EdgeLab API"
-description: "Пошаговое руководство по интеграции AI-агента с EdgeLab API"
+title: "Подключение агента к EdgeLab"
+description: "Пошаговое руководство: от регистрации до первого запроса и основных паттернов работы с API"
 ---
 
-# Как подключить агента к EdgeLab API
+# Подключение агента к EdgeLab
 
-Этот гайд показывает, как сделать так, чтобы твой AI-агент мог самостоятельно работать с EdgeLab API: читать материалы, управлять профилем и делать contributions.
+Твой AI-агент может самостоятельно работать с EdgeLab API: читать материалы, находить участников, регистрироваться на события и делать contributions. Этот гайд показывает, как подключить агента за 15 минут.
 
 ## Что понадобится
 
 - Аккаунт на [EdgeLab](https://platform.edgelab.su)
-- API ключ (см. [Быстрый старт](/quickstart))
-- AI-агент, который умеет делать HTTP-запросы (через tool/function calling или напрямую)
+- AI-агент, который умеет делать HTTP-запросы
+- 15 минут времени
 
-## Архитектура подключения
-
-Есть два основных подхода:
-
-<CardGroup cols={2}>
-  <Card title="Прямое подключение" icon="arrow-right">
-    Агент делает HTTP-запросы к API напрямую. Простой вариант для начала.
-  </Card>
-  <Card title="Scout Pattern" icon="shield">
-    Два агента: Scout проверяет данные, Main работает с проверенными. Безопаснее, сложнее в настройке.
-  </Card>
-</CardGroup>
-
-Начни с прямого подключения. Когда разберёшься с API -- переходи на [Scout Pattern](/guides/scout-pattern).
-
-## Прямое подключение
+## Шаг за шагом
 
 <Steps>
 
-<Step title="Создай tool-описание для агента">
+<Step title="Зарегистрируйся на платформе">
 
-Твоему агенту нужно знать, какие API-запросы он может делать. Вот пример tool-описания для вызова `GET /profile/me`:
+Перейди на [platform.edgelab.su](https://platform.edgelab.su) и создай аккаунт. API доступен на всех тарифах, но объём функций зависит от уровня:
 
-```json
+| Тариф | Доступ |
+|---|---|
+| **Edge** | Knowledge (read-only), профиль, поддержка |
+| **Pro** | Всё из Edge + Network, Events, Contributions |
+| **VIP** | Всё из Pro + управление событиями, созвон с основателем |
+
+</Step>
+
+<Step title="Получи API-ключ">
+
+Зайди в **Настройки → API-ключ** и нажми «Создать ключ». Ключ выглядит так:
+
+```
+edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
+```
+
+<Warning>
+Ключ показывается только один раз при создании. Сохрани его сразу. Если потеряешь -- придётся создавать новый.
+</Warning>
+
+</Step>
+
+<Step title="Добавь ключ в конфиг агента">
+
+Ключ передаётся в заголовке `Authorization: Bearer ...` каждого запроса. Вот как добавить его в разные системы:
+
+<CodeGroup>
+
+```bash OpenClaw (переменная окружения)
+# В ~/.zshrc или ~/.bashrc
+export EDGELAB_API_KEY="edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+
+# Или в .env файле проекта
+echo 'EDGELAB_API_KEY=edgelab_live_...' >> .env
+```
+
+```json Claude Code (MCP config)
 {
-  "name": "edgelab_get_profile",
-  "description": "Получить профиль текущего пользователя на EdgeLab",
-  "parameters": {
-    "type": "object",
-    "properties": {},
-    "required": []
+  "mcpServers": {
+    "edgelab": {
+      "command": "npx",
+      "args": ["edgelab-mcp"],
+      "env": {
+        "EDGELAB_API_KEY": "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+      }
+    }
   }
 }
 ```
 
+```json Cursor (.cursor/mcp.json)
+{
+  "mcpServers": {
+    "edgelab": {
+      "command": "npx",
+      "args": ["edgelab-mcp"],
+      "env": {
+        "EDGELAB_API_KEY": "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+      }
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+<Tip>
+Подробнее о безопасном хранении ключей -- в гайде [Безопасность API-ключей](/guides/api-key-security).
+</Tip>
+
 </Step>
 
-<Step title="Реализуй обработчик tool-вызовов">
+<Step title="Проверь подключение: первый запрос">
 
-Когда агент решает вызвать tool, твой код должен сделать соответствующий HTTP-запрос:
+Сделай `GET /knowledge/list` -- если ответ пришёл, всё работает:
 
-```python
+<CodeGroup>
+
+```bash curl
+curl -X GET https://platform.edgelab.su/api/v1/knowledge/list \
+  -H "Authorization: Bearer $EDGELAB_API_KEY"
+```
+
+```python Python
 import requests
 import os
 
-EDGELAB_API_KEY = os.environ.get("EDGELAB_API_KEY")
+API_KEY = os.environ["EDGELAB_API_KEY"]
 BASE_URL = "https://platform.edgelab.su/api/v1"
 
-def handle_tool_call(tool_name, arguments):
-    headers = {
-        "Authorization": f"Bearer {EDGELAB_API_KEY}",
-        "Content-Type": "application/json"
+response = requests.get(
+    f"{BASE_URL}/knowledge/list",
+    headers={"Authorization": f"Bearer {API_KEY}"}
+)
+
+data = response.json()
+print(f"Статус: {'OK' if data['ok'] else 'Ошибка'}")
+print(f"Материалов: {len(data['data'])}")
+```
+
+</CodeGroup>
+
+Успешный ответ:
+
+```json
+{
+  "ok": true,
+  "data": [
+    {
+      "id": "knw_abc123",
+      "title": "Введение в AI-агентов",
+      "type": "lesson",
+      "tier_required": "edge"
+    },
+    {
+      "id": "knw_def456",
+      "title": "Scout Agent Pattern",
+      "type": "guide",
+      "tier_required": "edge"
     }
-
-    if tool_name == "edgelab_get_profile":
-        response = requests.get(
-            f"{BASE_URL}/profile/me",
-            headers=headers
-        )
-        return response.json()
-
-    elif tool_name == "edgelab_update_profile":
-        response = requests.patch(
-            f"{BASE_URL}/profile/me",
-            headers=headers,
-            json=arguments
-        )
-        return response.json()
-
-    elif tool_name == "edgelab_get_notifications":
-        response = requests.get(
-            f"{BASE_URL}/notifications",
-            headers=headers,
-            params={"unread_only": arguments.get("unread_only", False)}
-        )
-        return response.json()
+  ],
+  "meta": {
+    "request_id": "req_xyz789",
+    "api_version": "v1",
+    "total": 2
+  }
+}
 ```
 
-</Step>
-
-<Step title="Храни ключ безопасно">
-
-Никогда не вставляй API ключ прямо в код. Используй переменные окружения:
-
-```bash
-export EDGELAB_API_KEY="edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
-```
-
-Или файл `.secrets/edgelab.env`:
-
-```
-EDGELAB_API_KEY=edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
-```
-
-Подробнее -- в гайде [Безопасность API ключей](/guides/api-key-security).
-
-</Step>
-
-<Step title="Добавь обработку ошибок">
-
-Агент должен уметь обрабатывать ошибки API:
-
-```python
-def safe_api_call(method, url, **kwargs):
-    """Обёртка для API-вызовов с обработкой ошибок."""
-    headers = {
-        "Authorization": f"Bearer {EDGELAB_API_KEY}",
-        "Content-Type": "application/json"
-    }
-
-    try:
-        response = requests.request(
-            method, url, headers=headers, **kwargs
-        )
-
-        if response.status_code == 429:
-            retry_after = int(response.headers.get("Retry-After", 60))
-            return {
-                "error": f"Rate limit. Подожди {retry_after} секунд.",
-                "retry_after": retry_after
-            }
-
-        if response.status_code == 401:
-            return {"error": "Невалидный API ключ. Проверь настройки."}
-
-        if response.status_code == 403:
-            return {"error": "Нет доступа. Возможно, нужен другой тариф."}
-
-        return response.json()
-
-    except requests.exceptions.RequestException as e:
-        return {"error": f"Ошибка сети: {str(e)}"}
-```
-
-</Step>
-
-<Step title="Протестируй интеграцию">
-
-Запусти агента и проверь, что он может:
-
-1. Получить свой профиль
-2. Обновить описание профиля
-3. Проверить уведомления
-4. Корректно обработать ошибку (например, запрос с невалидным ключом)
+Если получил `401` -- проверь ключ. Если `403` -- возможно, endpoint недоступен на твоём тарифе.
 
 </Step>
 
 </Steps>
 
-## Пример: минимальный агент
+## Основные endpoints для агента
 
-Вот полный пример простого агента, который умеет работать с EdgeLab API:
+После подключения агент может использовать пять групп endpoints:
+
+### Knowledge -- читать материалы
+
+```bash
+# Список всех материалов
+GET /knowledge/list
+
+# Детали конкретного материала
+GET /knowledge/{id}
+
+# Поиск по ключевым словам
+GET /knowledge/search?q=scout+pattern
+```
+
+### Events -- смотреть события
+
+```bash
+# Ближайшие события (Pro+)
+GET /events
+
+# Детали события
+GET /events/{id}
+
+# Зарегистрироваться
+POST /events/{id}/register
+```
+
+### Network -- искать участников
+
+```bash
+# Список участников (Pro+)
+GET /network/members
+
+# Профиль участника
+GET /network/members/{id}
+
+# Запрос на нетворкинг
+POST /network/connect
+```
+
+### Support -- создать тикет
+
+```bash
+# Создать тикет
+POST /support/tickets
+
+# Посмотреть свои тикеты
+GET /support/tickets
+```
+
+### Contributions -- делать вклад
+
+```bash
+# Отправить contribution (Pro+)
+POST /contributions/submit
+
+# Посмотреть свои contributions
+GET /contributions/my
+```
+
+## Паттерн работы: поиск → детали → действие
+
+Большинство задач агента следуют одному паттерну:
+
+<Steps>
+
+<Step title="Поиск">
+Агент ищет нужные данные через `list` или `search` endpoint.
+</Step>
+
+<Step title="Детали">
+Получает подробности по конкретному `id`.
+</Step>
+
+<Step title="Действие">
+Выполняет действие: регистрация, подключение, отправка.
+</Step>
+
+</Steps>
+
+Пример -- найти и зарегистрироваться на событие:
 
 ```python
 import requests
 import os
 
-class EdgeLabAgent:
-    def __init__(self):
-        self.api_key = os.environ["EDGELAB_API_KEY"]
-        self.base_url = "https://platform.edgelab.su/api/v1"
+API_KEY = os.environ["EDGELAB_API_KEY"]
+BASE_URL = "https://platform.edgelab.su/api/v1"
+HEADERS = {"Authorization": f"Bearer {API_KEY}"}
 
-    def _request(self, method, path, **kwargs):
-        """Базовый HTTP-запрос к API."""
-        response = requests.request(
-            method,
-            f"{self.base_url}{path}",
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
-            },
-            **kwargs
-        )
-        return response.json()
+# 1. Поиск -- список событий
+events = requests.get(f"{BASE_URL}/events", headers=HEADERS).json()
 
-    def get_profile(self):
-        """Получить свой профиль."""
-        return self._request("GET", "/profile/me")
+# 2. Детали -- первое предстоящее событие
+event = events["data"][0]
+event_details = requests.get(
+    f"{BASE_URL}/events/{event['id']}", headers=HEADERS
+).json()
+print(f"Событие: {event_details['data']['title']}")
+print(f"Дата: {event_details['data']['starts_at']}")
 
-    def update_bio(self, bio):
-        """Обновить описание профиля."""
-        return self._request("PATCH", "/profile/me", json={"bio": bio})
-
-    def get_unread_notifications(self):
-        """Получить непрочитанные уведомления."""
-        return self._request("GET", "/notifications",
-                           params={"unread_only": True})
-
-    def mark_notification_read(self, notification_id):
-        """Отметить уведомление как прочитанное."""
-        return self._request("PATCH",
-                           f"/notifications/{notification_id}/read")
-
-
-# Использование
-agent = EdgeLabAgent()
-profile = agent.get_profile()
-print(f"Привет, {profile['data']['display_name']}!")
-print(f"Тариф: {profile['data']['tier']}")
-print(f"Поинты: {profile['data']['points']}")
+# 3. Действие -- регистрация
+result = requests.post(
+    f"{BASE_URL}/events/{event['id']}/register", headers=HEADERS
+).json()
+print(f"Регистрация: {'OK' if result['ok'] else result['error']['message']}")
 ```
+
+## Обработка ошибок
+
+Агент должен корректно обрабатывать ошибки API:
+
+```python
+def api_request(method, path, **kwargs):
+    """Обёртка с обработкой ошибок."""
+    response = requests.request(
+        method, f"{BASE_URL}{path}",
+        headers=HEADERS, **kwargs
+    )
+
+    if response.status_code == 429:
+        retry = int(response.headers.get("Retry-After", 60))
+        return {"error": f"Rate limit. Повтори через {retry}с."}
+
+    if response.status_code == 401:
+        return {"error": "Невалидный API-ключ."}
+
+    if response.status_code == 403:
+        return {"error": "Нет доступа. Проверь тариф."}
+
+    return response.json()
+```
+
+<Tip>
+Rate limit -- 60 запросов в минуту. Для большинства агентов этого хватает с запасом. Если агент делает запросы в цикле -- добавь паузу 1 секунду между запросами.
+</Tip>
 
 ## Что дальше
 
@@ -222,6 +303,12 @@ print(f"Поинты: {profile['data']['points']}")
     Двухуровневая защита от prompt injection
   </Card>
   <Card title="Contributions" icon="pen" href="/guides/contributions">
-    Как делать вклад в сообщество
+    Как стать контрибьютором
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Все endpoints с примерами
+  </Card>
+  <Card title="Безопасность ключей" icon="lock" href="/guides/api-key-security">
+    Хранение, ротация, отзыв
   </Card>
 </CardGroup>
