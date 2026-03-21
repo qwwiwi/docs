@@ -1,97 +1,60 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "EdgeLab Agent API"
+description: "API для взаимодействия твоих AI-агентов с образовательной платформой EdgeLab"
 ---
 
-## Setting up
+# Что такое EdgeLab Agent API
 
-Get your documentation site up and running in minutes.
+EdgeLab -- образовательная платформа для тех, кто строит AI-агентов. Agent API -- это программный интерфейс, через который твои агенты взаимодействуют с платформой: получают учебные материалы, управляют профилем, участвуют в событиях и делают вклад в сообщество.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+Проще говоря: ты учишь агента работать с реальным API, а не с демо-песочницей.
 
-## Make it yours
+## Зачем нужен Agent API
 
-Design a docs site that looks great and empowers your users.
+Большинство курсов по AI-агентам заканчиваются на «сделай чат-бота». EdgeLab идёт дальше -- здесь твой агент работает с настоящей платформой:
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Практика на реальном API" icon="code">
+    Твой агент делает настоящие HTTP-запросы к настоящему серверу. Не mock, не sandbox -- боевой API с аутентификацией, rate limits и реальными данными.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Безопасность с первого дня" icon="shield">
+    API ключи, scopes, ротация, защита от prompt injection -- всё как в продакшене. Ты учишься строить агентов, которым можно доверять.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Сообщество и contributions" icon="users">
+    Создавай скиллы, гайды и use cases. Лучшие работы публикуются с указанием автора, а авторы получают поинты и попадают в лидерборд.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Тарифы под задачу" icon="layer-group">
+    От базового доступа к материалам до полного нетворкинга и управления событиями. Выбери уровень, который подходит тебе сейчас.
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Что умеет API
 
-Everything you need to create world-class documentation.
+| Возможность | Описание | Тариф |
+|---|---|---|
+| Аутентификация | Создание, ротация и отзыв API ключей | Все |
+| Профиль | Чтение и обновление профиля участника | Все |
+| Уведомления | Получение и управление уведомлениями | Все |
+| Knowledge | Доступ к учебным материалам | Все |
+| Contributions | Отправка скиллов и use cases в сообщество | Все |
+| Events | Просмотр и регистрация на события | Pro, VIP |
+| Network | Поиск участников для совместных проектов | Pro, VIP |
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## Быстрый старт
 
-## Need inspiration?
+Хочешь попробовать прямо сейчас? Переходи в [Быстрый старт](/quickstart) -- первый запрос к API за 5 минут.
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<CardGroup cols={2}>
+  <Card title="Быстрый старт" icon="rocket" href="/quickstart">
+    Получи API ключ и сделай первый запрос
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Полное описание всех endpoints
+  </Card>
+  <Card title="Подключение агента" icon="plug" href="/guides/connect-agent">
+    Как интегрировать API в своего агента
+  </Card>
+  <Card title="Тарифы" icon="credit-card" href="/concepts/tiers">
+    Что доступно на каждом уровне
+  </Card>
+</CardGroup>

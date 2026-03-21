@@ -1,0 +1,141 @@
+---
+title: "Безопасность API ключей"
+description: "Как хранить, ротировать и защищать API ключи EdgeLab"
+---
+
+# Безопасность API ключей
+
+API ключ даёт доступ к твоему аккаунту на EdgeLab. Если ключ попадёт в чужие руки -- кто-то сможет действовать от твоего имени. Этот гайд объясняет, как правильно хранить и защищать ключи.
+
+## Главное правило
+
+<Warning>
+Никогда не вставляй API ключ напрямую в код, который может быть опубликован или отправлен кому-то.
+</Warning>
+
+## Как хранить ключи
+
+### Переменные окружения
+
+Самый простой и надёжный способ. Ключ хранится в системе, а код читает его оттуда:
+
+```bash
+# Добавь в ~/.bashrc или ~/.zshrc
+export EDGELAB_API_KEY="edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+```
+
+В Python:
+```python
+import os
+
+API_KEY = os.environ["EDGELAB_API_KEY"]
+```
+
+### Файл .secrets/
+
+Создай директорию `.secrets/` в корне проекта и положи туда файл с ключом:
+
+```bash
+mkdir -p .secrets
+echo 'EDGELAB_API_KEY=edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4' > .secrets/edgelab.env
+chmod 600 .secrets/edgelab.env
+```
+
+<Warning>
+Обязательно добавь `.secrets/` в `.gitignore`:
+```
+# .gitignore
+.secrets/
+```
+</Warning>
+
+В Python:
+```python
+from dotenv import load_dotenv
+import os
+
+load_dotenv(".secrets/edgelab.env")
+API_KEY = os.environ["EDGELAB_API_KEY"]
+```
+
+### Файл .env
+
+Если используешь `.env` (через python-dotenv или аналоги):
+
+```
+# .env
+EDGELAB_API_KEY=edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
+```
+
+Не забудь добавить `.env` в `.gitignore`.
+
+## Чего не делать
+
+| Плохо | Почему |
+|---|---|
+| Ключ в коде: `API_KEY = "edgelab_live_..."` | Попадёт в git, в логи, в скриншоты |
+| Ключ в URL: `?api_key=edgelab_live_...` | Сохраняется в логах сервера, в истории браузера |
+| Ключ в сообщении (Telegram, Discord, email) | Мессенджеры хранят историю, могут быть взломаны |
+| Один ключ на все проекты | Компрометация одного проекта = компрометация всех |
+
+## Ротация ключей
+
+Ротируй ключ если:
+- Ключ мог быть виден кому-то (показал на экране, попал в лог)
+- Ключ попал в публичный репозиторий (даже если удалил коммит -- git хранит историю)
+- Прошло больше 90 дней с последней ротации
+- Ты перестал использовать агента, для которого создавался ключ
+
+Как ротировать:
+
+<CodeGroup>
+```bash curl
+curl -X POST https://platform.edgelab.su/api/v1/auth/keys/rotate \
+  -H "Authorization: Bearer edgelab_live_ТЕКУЩИЙ_КЛЮЧ" \
+  -H "Content-Type: application/json" \
+  -d '{"prefix": "edgelab_live_ПРЕФИКС"}'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "https://platform.edgelab.su/api/v1/auth/keys/rotate",
+    headers={
+        "Authorization": "Bearer edgelab_live_ТЕКУЩИЙ_КЛЮЧ",
+        "Content-Type": "application/json"
+    },
+    json={"prefix": "edgelab_live_ПРЕФИКС"}
+)
+
+new_key = response.json()["data"]["new_key"]
+print(f"Новый ключ: {new_key}")
+# Сразу обнови ключ в .secrets/ или переменных окружения
+```
+</CodeGroup>
+
+<Note>
+После ротации старый ключ моментально перестаёт работать. Обнови ключ во всех местах, где он используется, сразу после ротации.
+</Note>
+
+## Экстренный отзыв
+
+Если ключ точно скомпрометирован -- отзови его немедленно:
+
+```bash
+curl -X POST https://platform.edgelab.su/api/v1/auth/keys/revoke \
+  -H "Authorization: Bearer edgelab_live_ДРУГОЙ_КЛЮЧ" \
+  -H "Content-Type: application/json" \
+  -d '{"prefix": "edgelab_live_СКОМПРОМЕТИРОВАННЫЙ_ПРЕФИКС"}'
+```
+
+Отозванный ключ нельзя восстановить. Создай новый.
+
+## Чеклист безопасности
+
+- [ ] Ключ хранится в переменных окружения или `.secrets/`
+- [ ] `.secrets/` и `.env` добавлены в `.gitignore`
+- [ ] У каждого агента свой ключ (если агентов несколько)
+- [ ] Ключи ротируются хотя бы раз в 90 дней
+- [ ] В git-истории нет следов ключей
+- [ ] Ключ не появляется в логах приложения

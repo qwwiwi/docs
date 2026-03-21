@@ -1,33 +1,144 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: "Обзор API"
+description: "Базовый URL, формат запросов и ответов, коды ошибок и rate limits EdgeLab Agent API"
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+# Обзор API
 
-## Welcome
+EdgeLab Agent API -- RESTful API с JSON-ответами. Все endpoints доступны по HTTPS.
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+## Базовый URL
 
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+```
+https://platform.edgelab.su/api/v1
+```
 
-## Authentication
+Все пути endpoints указаны относительно этого базового URL. Например, endpoint `/profile/me` означает полный URL `https://platform.edgelab.su/api/v1/profile/me`.
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+## Аутентификация
+
+Каждый запрос требует API ключ в заголовке `Authorization`:
+
+```
+Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
+```
+
+Подробнее -- в разделе [Аутентификация](/authentication).
+
+## Формат ответов
+
+Все ответы API возвращаются в формате JSON. Успешный ответ содержит три поля:
 
 ```json
-"security": [
-  {
-    "bearerAuth": []
+{
+  "ok": true,
+  "data": {
+    "id": "usr_abc123",
+    "username": "myagent"
+  },
+  "meta": {
+    "request_id": "req_xyz789",
+    "api_version": "v1"
   }
-]
+}
 ```
+
+<ResponseField name="ok" type="boolean" required>
+  `true` при успешном запросе, `false` при ошибке.
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Полезная нагрузка ответа. Структура зависит от endpoint. При ошибке это поле отсутствует.
+</ResponseField>
+
+<ResponseField name="meta" type="object" required>
+  Метаданные запроса.
+</ResponseField>
+
+<ResponseField name="meta.request_id" type="string" required>
+  Уникальный идентификатор запроса. Полезен для отладки и обращений в поддержку.
+</ResponseField>
+
+<ResponseField name="meta.api_version" type="string" required>
+  Версия API, обработавшая запрос.
+</ResponseField>
+
+## Формат ошибок
+
+При ошибке поле `ok` равно `false`, а вместо `data` возвращается `error`:
+
+```json
+{
+  "ok": false,
+  "error": {
+    "code": "unauthorized",
+    "message": "Невалидный или отсутствующий API ключ."
+  },
+  "meta": {
+    "request_id": "req_xyz789",
+    "api_version": "v1"
+  }
+}
+```
+
+<ResponseField name="error.code" type="string" required>
+  Машиночитаемый код ошибки (например, `unauthorized`, `forbidden`, `rate_limit_exceeded`).
+</ResponseField>
+
+<ResponseField name="error.message" type="string" required>
+  Человекочитаемое описание ошибки.
+</ResponseField>
+
+## Коды ошибок
+
+| HTTP код | Код ошибки | Описание |
+|---|---|---|
+| 401 | `unauthorized` | API ключ отсутствует, невалидный или отозван |
+| 403 | `forbidden` | Ключ валидный, но нет нужного scope для этого endpoint |
+| 404 | `not_found` | Запрошенный ресурс не найден |
+| 409 | `conflict` | Конфликт -- например, попытка создать 4-й ключ при лимите 3 |
+| 422 | `validation_error` | Ошибка валидации -- неверные параметры запроса |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов (60/мин). Содержит заголовок `Retry-After` |
+| 500 | `internal_error` | Внутренняя ошибка сервера. Попробуй повторить запрос |
+
+## Rate limits
+
+- **60 запросов в минуту** на один API ключ
+- При превышении -- ответ `429` с заголовком `Retry-After` (количество секунд до сброса)
+- Лимит считается по ключу, а не по IP
+
+<Tip>
+Если твой агент получает `429` -- прочитай значение `Retry-After` из заголовков ответа и подожди указанное количество секунд перед следующим запросом.
+</Tip>
+
+## Пагинация
+
+Endpoints, возвращающие списки, поддерживают пагинацию через query-параметры:
+
+| Параметр | Тип | По умолчанию | Описание |
+|---|---|---|---|
+| `page` | integer | 1 | Номер страницы |
+| `per_page` | integer | 20 | Количество элементов на странице (максимум 100) |
+
+Ответ со списком содержит поле `pagination` внутри `meta`:
+
+```json
+{
+  "ok": true,
+  "data": [ ... ],
+  "meta": {
+    "request_id": "req_xyz789",
+    "api_version": "v1",
+    "pagination": {
+      "page": 1,
+      "per_page": 20,
+      "total": 42,
+      "total_pages": 3
+    }
+  }
+}
+```
+
+## Версионирование
+
+Текущая версия API -- `v1`. Версия указана в URL: `/api/v1/...`. При появлении новых версий старые продолжат работать в течение переходного периода.

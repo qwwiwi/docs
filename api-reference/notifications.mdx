@@ -1,0 +1,221 @@
+---
+title: "Notifications"
+description: "Получение и управление уведомлениями"
+---
+
+# Notifications endpoints
+
+Endpoints для работы с уведомлениями: получение списка, отметка прочитанными, подсчёт непрочитанных.
+
+---
+
+## GET /notifications
+
+Получить список уведомлений текущего пользователя.
+
+**Scope:** `profile:read` (все тарифы)
+
+**Полный URL:** `GET https://platform.edgelab.su/api/v1/notifications`
+
+### Query-параметры
+
+| Параметр | Тип | По умолчанию | Описание |
+|---|---|---|---|
+| `page` | integer | 1 | Номер страницы |
+| `per_page` | integer | 20 | Количество на странице (макс. 100) |
+| `unread_only` | boolean | false | Показывать только непрочитанные |
+
+### Пример запроса
+
+<CodeGroup>
+```bash curl
+curl -X GET "https://platform.edgelab.su/api/v1/notifications?unread_only=true" \
+  -H "Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+```
+
+```python Python
+import requests
+
+API_KEY = "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+
+response = requests.get(
+    "https://platform.edgelab.su/api/v1/notifications",
+    headers={"Authorization": f"Bearer {API_KEY}"},
+    params={"unread_only": True}
+)
+
+print(response.json())
+```
+</CodeGroup>
+
+### Пример ответа
+
+```json
+{
+  "ok": true,
+  "data": [
+    {
+      "id": "ntf_001",
+      "type": "contribution_approved",
+      "title": "Твой contribution одобрен",
+      "message": "Скилл «Weather Agent» был одобрен и опубликован.",
+      "read": false,
+      "created_at": "2025-03-15T10:00:00Z"
+    },
+    {
+      "id": "ntf_002",
+      "type": "points_earned",
+      "title": "Ты заработал поинты",
+      "message": "+10 поинтов за одобренный contribution.",
+      "read": false,
+      "created_at": "2025-03-15T10:00:01Z"
+    }
+  ],
+  "meta": {
+    "request_id": "req_ntf001",
+    "api_version": "v1",
+    "pagination": {
+      "page": 1,
+      "per_page": 20,
+      "total": 2,
+      "total_pages": 1
+    }
+  }
+}
+```
+
+### Поля ответа
+
+<ResponseField name="data[].id" type="string" required>
+  Уникальный идентификатор уведомления.
+</ResponseField>
+
+<ResponseField name="data[].type" type="string" required>
+  Тип уведомления (например, `contribution_approved`, `points_earned`, `endorsement_received`).
+</ResponseField>
+
+<ResponseField name="data[].title" type="string" required>
+  Заголовок уведомления.
+</ResponseField>
+
+<ResponseField name="data[].message" type="string" required>
+  Текст уведомления.
+</ResponseField>
+
+<ResponseField name="data[].read" type="boolean" required>
+  Прочитано ли уведомление.
+</ResponseField>
+
+<ResponseField name="data[].created_at" type="string" required>
+  Дата и время создания (ISO 8601).
+</ResponseField>
+
+---
+
+## PATCH /notifications/{id}/read
+
+Отметить уведомление как прочитанное.
+
+**Scope:** `profile:write` (все тарифы)
+
+**Полный URL:** `PATCH https://platform.edgelab.su/api/v1/notifications/{id}/read`
+
+### Параметры пути
+
+| Параметр | Тип | Описание |
+|---|---|---|
+| `id` | string | Идентификатор уведомления |
+
+### Пример запроса
+
+<CodeGroup>
+```bash curl
+curl -X PATCH https://platform.edgelab.su/api/v1/notifications/ntf_001/read \
+  -H "Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+```
+
+```python Python
+import requests
+
+API_KEY = "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+
+notification_id = "ntf_001"
+
+response = requests.patch(
+    f"https://platform.edgelab.su/api/v1/notifications/{notification_id}/read",
+    headers={"Authorization": f"Bearer {API_KEY}"}
+)
+
+print(response.json())
+```
+</CodeGroup>
+
+### Пример ответа
+
+```json
+{
+  "ok": true,
+  "data": {
+    "id": "ntf_001",
+    "read": true,
+    "read_at": "2025-03-15T14:30:00Z"
+  },
+  "meta": {
+    "request_id": "req_ntf002",
+    "api_version": "v1"
+  }
+}
+```
+
+### Ошибки
+
+| HTTP код | Когда |
+|---|---|
+| 404 Not Found | Уведомление с указанным id не найдено или принадлежит другому пользователю |
+
+---
+
+## GET /notifications/unread-count
+
+Получить количество непрочитанных уведомлений. Удобно для отображения бейджа или периодической проверки.
+
+**Scope:** `profile:read` (все тарифы)
+
+**Полный URL:** `GET https://platform.edgelab.su/api/v1/notifications/unread-count`
+
+### Пример запроса
+
+<CodeGroup>
+```bash curl
+curl -X GET https://platform.edgelab.su/api/v1/notifications/unread-count \
+  -H "Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+```
+
+```python Python
+import requests
+
+API_KEY = "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+
+response = requests.get(
+    "https://platform.edgelab.su/api/v1/notifications/unread-count",
+    headers={"Authorization": f"Bearer {API_KEY}"}
+)
+
+print(response.json())
+```
+</CodeGroup>
+
+### Пример ответа
+
+```json
+{
+  "ok": true,
+  "data": {
+    "unread_count": 5
+  },
+  "meta": {
+    "request_id": "req_ntf003",
+    "api_version": "v1"
+  }
+}
+```

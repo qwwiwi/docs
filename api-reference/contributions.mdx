@@ -1,0 +1,182 @@
+---
+title: "Contributions"
+description: "Отправка contributions в сообщество: скиллы, use cases, голосование"
+---
+
+# Contributions endpoints
+
+<Note>
+Эти endpoints находятся в разработке и будут доступны в ближайшем обновлении. Ниже описана планируемая функциональность.
+</Note>
+
+Contributions -- это способ вносить вклад в сообщество EdgeLab. Ты можешь отправлять скиллы, use cases и предложения по событиям. Лучшие работы публикуются на платформе с указанием автора и приносят поинты.
+
+Подробнее о процессе -- в гайде [Как делать contributions](/guides/contributions).
+
+---
+
+## POST /contributions
+
+<Info>
+Coming soon -- этот endpoint появится в ближайшем обновлении API.
+</Info>
+
+Отправить новый contribution на ревью.
+
+**Scope:** `contributions:write` (все тарифы)
+
+**Полный URL:** `POST https://platform.edgelab.su/api/v1/contributions`
+
+### Планируемые параметры запроса (body)
+
+| Параметр | Тип | Обязательный | Описание |
+|---|---|---|---|
+| `title` | string | Да | Заголовок (макс. 100 символов) |
+| `type` | string | Да | Тип: `skill`, `usecase`, `event_suggestion` |
+| `description` | string | Да | Краткое описание (макс. 500 символов) |
+| `content` | string | Да | Полное содержимое в формате markdown |
+
+### Планируемое поведение
+
+- Максимум **2 активных pending** contributions одновременно
+- При превышении лимита -- `409 Conflict`
+- После отправки contribution получает статус `pending` и попадает в очередь на ревью
+- Автор получает +1 поинт за отправку
+
+### Планируемые статусы contribution
+
+| Статус | Описание |
+|---|---|
+| `pending` | Ожидает ревью |
+| `in_review` | На ревью у администратора |
+| `revision_requested` | Администратор запросил доработку |
+| `approved` | Одобрен и опубликован |
+| `rejected` | Отклонён |
+| `featured` | Выбран как лучший (featured) |
+
+### Планируемые ошибки
+
+| HTTP код | Когда |
+|---|---|
+| 409 Conflict | Уже есть 2 активных pending contributions |
+| 422 Validation Error | Невалидные данные (пустой title, неизвестный type и т.д.) |
+
+---
+
+## GET /contributions/mine
+
+<Info>
+Coming soon -- этот endpoint появится в ближайшем обновлении API.
+</Info>
+
+Получить список своих contributions.
+
+**Scope:** `contributions:write` (все тарифы)
+
+**Полный URL:** `GET https://platform.edgelab.su/api/v1/contributions/mine`
+
+### Планируемые query-параметры
+
+| Параметр | Тип | По умолчанию | Описание |
+|---|---|---|---|
+| `page` | integer | 1 | Номер страницы |
+| `per_page` | integer | 20 | Количество на странице |
+| `status` | string | -- | Фильтр по статусу |
+
+### Планируемая структура ответа
+
+Каждый contribution будет содержать:
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `id` | string | Идентификатор contribution |
+| `title` | string | Заголовок |
+| `type` | string | Тип: `skill`, `usecase`, `event_suggestion` |
+| `status` | string | Текущий статус |
+| `description` | string | Краткое описание |
+| `endorsements_count` | integer | Количество голосов за |
+| `points_earned` | integer | Поинты, полученные за этот contribution |
+| `reviewer_comment` | string | Комментарий ревьюера (если есть) |
+| `created_at` | string | Дата отправки (ISO 8601) |
+| `updated_at` | string | Дата последнего обновления |
+
+---
+
+## POST /contributions/{id}/endorse
+
+<Info>
+Coming soon -- этот endpoint появится в ближайшем обновлении API.
+</Info>
+
+Проголосовать за (endorse) contribution другого участника.
+
+**Scope:** `contributions:write` (все тарифы)
+
+**Полный URL:** `POST https://platform.edgelab.su/api/v1/contributions/{id}/endorse`
+
+### Планируемые параметры пути
+
+| Параметр | Тип | Описание |
+|---|---|---|
+| `id` | string | Идентификатор contribution |
+
+### Планируемое поведение
+
+- Каждый endorsement приносит автору contribution +2 поинта
+- Один пользователь может проголосовать за один contribution только один раз
+- Нельзя голосовать за свой собственный contribution
+- Голосовать можно за contributions в статусе `pending`, `in_review` или `approved`
+
+### Планируемые ошибки
+
+| HTTP код | Когда |
+|---|---|
+| 404 Not Found | Contribution не найден |
+| 409 Conflict | Уже голосовал за этот contribution |
+| 422 Validation Error | Попытка голосовать за свой contribution |
+
+---
+
+## GET /contributions/leaderboard
+
+<Info>
+Coming soon -- этот endpoint появится в ближайшем обновлении API.
+</Info>
+
+Получить лидерборд contributors -- рейтинг участников по поинтам.
+
+**Scope:** `contributions:write` (все тарифы)
+
+**Полный URL:** `GET https://platform.edgelab.su/api/v1/contributions/leaderboard`
+
+### Планируемые query-параметры
+
+| Параметр | Тип | По умолчанию | Описание |
+|---|---|---|---|
+| `limit` | integer | 20 | Количество позиций (макс. 100) |
+| `period` | string | `all_time` | Период: `week`, `month`, `all_time` |
+
+### Планируемая структура ответа
+
+```json
+{
+  "ok": true,
+  "data": [
+    {
+      "rank": 1,
+      "user_id": "usr_abc123",
+      "username": "top_contributor",
+      "display_name": "Top Contributor",
+      "points": 142,
+      "contributions_count": 8,
+      "approved_count": 5,
+      "featured_count": 1
+    }
+  ],
+  "meta": {
+    "request_id": "req_lb001",
+    "api_version": "v1",
+    "period": "all_time"
+  }
+}
+```
