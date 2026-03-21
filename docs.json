@@ -85,6 +85,12 @@
             "pages": [
               "api-reference/contributions"
             ]
+          },
+          {
+            "group": "Support",
+            "pages": [
+              "api-reference/support"
+            ]
           }
         ]
       },

@@ -1,97 +1,269 @@
 ---
 title: "Knowledge"
-description: "Доступ к учебным материалам платформы"
+description: "Поиск и доступ к учебным материалам: уроки, скиллы, юзкейсы, эфиры"
 ---
 
-# Knowledge endpoints
+# Knowledge API
+
+База знаний Edge Lab содержит 4 категории материалов:
+
+| Категория | Описание |
+|---|---|
+| `lessons` | Пошаговые уроки с практикой |
+| `skills` | Скиллы и гайды -- навыки и инструменты |
+| `usecases` | Реальные юзкейсы и примеры применения |
+| `live` | Записи эфиров, AMA, воркшопов |
 
 <Note>
-Эти endpoints находятся в разработке и будут доступны в ближайшем обновлении. Ниже описана планируемая функциональность.
+Все endpoints используют авторизацию Bearer API-key: `Authorization: Bearer edgelab_live_...`
+
+Base URL: `https://platform.edgelab.su/api/v1`
 </Note>
 
-Endpoints для доступа к учебным материалам EdgeLab: уроки, гайды, use cases. Материалы доступны в форматах markdown и HTML.
+<Info>
+Все тарифы (Edge, Pro, VIP) имеют доступ к Knowledge API. Ограничений по тарифу нет.
+</Info>
 
 ---
 
-## GET /knowledge/items
+## GET /knowledge/search
 
-<Info>
-Coming soon -- этот endpoint появится в ближайшем обновлении API.
-</Info>
+Полнотекстовый поиск по всем материалам базы знаний.
 
-Получить список доступных учебных материалов. Возвращает заголовки, описания и метаданные без полного содержимого.
+**Scope:** `knowledge:read`
 
-**Scope:** `knowledge:read` (все тарифы)
+**Полный URL:** `GET https://platform.edgelab.su/api/v1/knowledge/search`
 
-**Полный URL:** `GET https://platform.edgelab.su/api/v1/knowledge/items`
-
-### Планируемые query-параметры
+### Query-параметры
 
 | Параметр | Тип | По умолчанию | Описание |
 |---|---|---|---|
-| `page` | integer | 1 | Номер страницы |
-| `per_page` | integer | 20 | Количество на странице (макс. 100) |
-| `category` | string | -- | Фильтр по категории: `lesson`, `guide`, `usecase` |
-| `tier` | string | -- | Фильтр по минимальному тарифу: `edge`, `pro`, `vip` |
+| `q` | string | -- | Поисковый запрос (обязательный) |
+| `category` | string | -- | Фильтр по категории: `lessons`, `skills`, `usecases`, `live` |
+| `limit` | integer | 20 | Количество результатов (макс. 100) |
+| `offset` | integer | 0 | Смещение для пагинации |
 
-### Планируемая структура ответа
+### Пример запроса
 
-Каждый элемент списка будет содержать:
+```
+GET /api/v1/knowledge/search?q=trading+bot&category=skills&limit=5
+```
 
-| Поле | Тип | Описание |
-|---|---|---|
-| `id` | string | Уникальный идентификатор материала |
-| `title` | string | Заголовок |
-| `description` | string | Краткое описание |
-| `category` | string | Категория: `lesson`, `guide`, `usecase` |
-| `min_tier` | string | Минимальный тариф для доступа |
-| `author` | string | Автор материала |
-| `created_at` | string | Дата публикации (ISO 8601) |
-| `updated_at` | string | Дата последнего обновления (ISO 8601) |
+### Пример ответа
+
+```json
+{
+  "results": [
+    {
+      "id": "kn_t1r2a3d4",
+      "title": "Создание торгового бота на Python",
+      "description": "Пошаговый гайд по разработке бота для автоматической торговли через API биржи",
+      "category": "skills",
+      "skill_type": "guide",
+      "author": "Даши",
+      "relevance_score": 0.94,
+      "created_at": "2025-02-10T08:00:00Z",
+      "updated_at": "2025-03-01T12:00:00Z"
+    },
+    {
+      "id": "kn_b5o6t7s8",
+      "title": "3 юзкейса ботов для DCA",
+      "description": "Как участники сообщества используют ботов для Dollar Cost Averaging",
+      "category": "usecases",
+      "related_skills": ["kn_t1r2a3d4", "kn_p9y0t1h2"],
+      "author": "Алексей К.",
+      "relevance_score": 0.81,
+      "created_at": "2025-02-20T10:00:00Z",
+      "updated_at": "2025-02-20T10:00:00Z"
+    }
+  ],
+  "total": 8,
+  "limit": 5,
+  "offset": 0
+}
+```
 
 ---
 
-## GET /knowledge/items/{id}
+## GET /knowledge/list
 
-<Info>
-Coming soon -- этот endpoint появится в ближайшем обновлении API.
-</Info>
+Список материалов с фильтрацией и сортировкой. В отличие от search, не требует поискового запроса.
 
-Получить полное содержимое учебного материала по идентификатору. Содержимое возвращается в формате markdown.
+**Scope:** `knowledge:read`
 
-**Scope:** `knowledge:read` (все тарифы)
+**Полный URL:** `GET https://platform.edgelab.su/api/v1/knowledge/list`
 
-**Полный URL:** `GET https://platform.edgelab.su/api/v1/knowledge/items/{id}`
+### Query-параметры
 
-### Планируемые параметры пути
+| Параметр | Тип | По умолчанию | Описание |
+|---|---|---|---|
+| `category` | string | -- | Фильтр: `lessons`, `skills`, `usecases`, `live` |
+| `sort` | string | `created_at_desc` | Сортировка: `created_at_desc`, `created_at_asc`, `title_asc`, `popularity` |
+| `limit` | integer | 20 | Количество результатов (макс. 100) |
+| `offset` | integer | 0 | Смещение для пагинации |
+
+### Пример запроса
+
+```
+GET /api/v1/knowledge/list?category=live&sort=created_at_desc&limit=3
+```
+
+### Пример ответа
+
+```json
+{
+  "items": [
+    {
+      "id": "kn_l1v2e3s4",
+      "title": "AMA: Как AI-агенты меняют крипто-трейдинг",
+      "description": "Запись эфира с разбором реальных кейсов автоматизации",
+      "category": "live",
+      "duration_min": 62,
+      "key_takeaways": [
+        "AI-агенты снижают эмоциональные решения",
+        "DCA + бот = стабильная стратегия",
+        "Пример портфеля с $10/день"
+      ],
+      "author": "Даши",
+      "created_at": "2025-03-10T18:00:00Z"
+    }
+  ],
+  "total": 14,
+  "limit": 3,
+  "offset": 0
+}
+```
+
+---
+
+## GET /knowledge/{id}
+
+Полные детали материала, включая содержимое и специфичные поля по категории.
+
+**Scope:** `knowledge:read`
+
+**Полный URL:** `GET https://platform.edgelab.su/api/v1/knowledge/{id}`
+
+### Параметры пути
 
 | Параметр | Тип | Описание |
 |---|---|---|
 | `id` | string | Идентификатор материала |
 
-### Планируемые query-параметры
+### Пример ответа (lesson)
 
-| Параметр | Тип | По умолчанию | Описание |
-|---|---|---|---|
-| `format` | string | `markdown` | Формат содержимого: `markdown` или `html` |
+```json
+{
+  "id": "kn_l1e2s3s4",
+  "title": "Настройка DCA-бота за 30 минут",
+  "description": "От регистрации на бирже до первой автоматической покупки",
+  "category": "lessons",
+  "content_markdown": "# Настройка DCA-бота\n\n## Шаг 1: Регистрация...",
+  "steps": [
+    {"step": 1, "title": "Регистрация на бирже", "duration_min": 5},
+    {"step": 2, "title": "Создание API-ключа", "duration_min": 3},
+    {"step": 3, "title": "Настройка бота", "duration_min": 10},
+    {"step": 4, "title": "Первый тестовый запуск", "duration_min": 12}
+  ],
+  "author": "Даши",
+  "has_files": true,
+  "created_at": "2025-01-15T08:00:00Z",
+  "updated_at": "2025-03-05T14:30:00Z"
+}
+```
 
-### Планируемая структура ответа
+### Поля по категориям
 
+Помимо общих полей (`id`, `title`, `description`, `category`, `author`, `content_markdown`, `has_files`, `created_at`, `updated_at`), каждая категория содержит специфичные поля:
+
+<Expandable title="lessons — уроки">
 | Поле | Тип | Описание |
 |---|---|---|
-| `id` | string | Идентификатор материала |
-| `title` | string | Заголовок |
-| `description` | string | Краткое описание |
-| `content` | string | Полное содержимое в выбранном формате |
-| `category` | string | Категория |
-| `min_tier` | string | Минимальный тариф |
-| `author` | string | Автор |
-| `created_at` | string | Дата публикации |
-| `updated_at` | string | Дата обновления |
+| `steps` | array | Список шагов: `step`, `title`, `duration_min` |
+</Expandable>
 
-### Планируемые ошибки
+<Expandable title="skills — скиллы и гайды">
+| Поле | Тип | Описание |
+|---|---|---|
+| `skill_type` | string | Тип: `skill` или `guide` |
+</Expandable>
+
+<Expandable title="usecases — юзкейсы">
+| Поле | Тип | Описание |
+|---|---|---|
+| `related_skills` | array | Список ID связанных материалов |
+</Expandable>
+
+<Expandable title="live — записи эфиров">
+| Поле | Тип | Описание |
+|---|---|---|
+| `duration_min` | integer | Длительность в минутах |
+| `transcript` | string | Текстовая расшифровка эфира |
+| `key_takeaways` | array | Ключевые тезисы |
+</Expandable>
+
+### Ошибки
 
 | HTTP код | Когда |
 |---|---|
-| 403 Forbidden | Тариф пользователя ниже `min_tier` материала |
-| 404 Not Found | Материал с указанным id не найден |
+| `404 Not Found` | Материал с указанным ID не найден |
+
+---
+
+## GET /knowledge/{id}/files
+
+Список файлов, прикреплённых к материалу. Файлы хранятся на GitHub -- API возвращает ссылки для скачивания.
+
+**Scope:** `knowledge:read`
+
+**Полный URL:** `GET https://platform.edgelab.su/api/v1/knowledge/{id}/files`
+
+### Параметры пути
+
+| Параметр | Тип | Описание |
+|---|---|---|
+| `id` | string | Идентификатор материала |
+
+### Пример ответа
+
+```json
+{
+  "files": [
+    {
+      "filename": "dca-bot-config.py",
+      "size_bytes": 4521,
+      "mime_type": "text/x-python",
+      "github_url": "https://github.com/edgelab-su/knowledge-files/blob/main/lessons/dca-bot/config.py",
+      "raw_url": "https://raw.githubusercontent.com/edgelab-su/knowledge-files/main/lessons/dca-bot/config.py"
+    },
+    {
+      "filename": "README.md",
+      "size_bytes": 1203,
+      "mime_type": "text/markdown",
+      "github_url": "https://github.com/edgelab-su/knowledge-files/blob/main/lessons/dca-bot/README.md",
+      "raw_url": "https://raw.githubusercontent.com/edgelab-su/knowledge-files/main/lessons/dca-bot/README.md"
+    }
+  ],
+  "total": 2
+}
+```
+
+<Warning>
+Файлы хранятся на GitHub, а не загружаются через API. Для скачивания используйте `raw_url`. Для просмотра в браузере -- `github_url`.
+</Warning>
+
+---
+
+## Паттерн работы агента
+
+Рекомендуемый flow для AI-агента при работе с Knowledge API:
+
+1. **Поиск:** `GET /knowledge/search?q=нужная тема` -- найти релевантные материалы
+2. **Детали:** `GET /knowledge/{id}` -- получить полное содержимое
+3. **Спросить хозяина:** «Нашёл гайд по теме X. Хочешь, чтобы я скачал файлы?»
+4. **Файлы:** `GET /knowledge/{id}/files` -- получить ссылки на GitHub
+5. **Скачать:** загрузить файлы через `raw_url` для локальной работы
+
+<Tip>
+Если задача хозяина связана с конкретным навыком -- начните с `GET /knowledge/search?category=skills`. Для обучения -- `category=lessons`. Для вдохновения -- `category=usecases`.
+</Tip>
