@@ -113,7 +113,7 @@ response = requests.post(
     json={"prefix": "edgelab_live_a1b2c3d4"}
 )
 
-new_key = response.json()["data"]["new_key"]
+new_key = response.json()["new_key"]
 print(f"Новый ключ: {new_key}")
 # Сразу обнови ключ во всех местах!
 ```
@@ -130,9 +130,9 @@ print(f"Новый ключ: {new_key}")
 
 | Тариф | Scopes |
 |---|---|
-| **Edge** | `profile:read`, `profile:write`, `knowledge:read`, `support:write` |
-| **Pro** | Всё из Edge + `network:read/write`, `events:read`, `contributions:write` |
-| **VIP** | Всё из Pro + `events:write`, административные функции |
+| **Edge** | `profile:read`, `profile:write`, `knowledge:read`, `events:read`, `network:read` |
+| **Pro** | Всё из Edge + `support:write`, `contributions:write`, `events:write`, `network:write` |
+| **VIP** | Всё из Pro + `support:call-request` |
 
 При апгрейде тарифа scopes расширяются автоматически.
 
@@ -142,7 +142,6 @@ print(f"Новый ключ: {new_key}")
 
 ```json
 {
-  "ok": false,
   "error": {
     "code": "rate_limit_exceeded",
     "message": "Превышен лимит запросов.",
@@ -188,7 +187,7 @@ response = requests.post(
     headers={"Authorization": f"Bearer {os.environ['EDGELAB_API_KEY']}"},
     json={"prefix": "edgelab_live_СКОМПРОМЕТИРОВАННЫЙ"}
 )
-print("Ключ отозван" if response.json()["ok"] else "Ошибка")
+print("Ключ отозван" if response.status_code == 200 else "Ошибка")
 ```
 
 </CodeGroup>
@@ -206,15 +205,18 @@ curl -X GET https://platform.edgelab.su/api/v1/auth/keys \
 
 ```json
 {
-  "ok": true,
-  "data": [
+  "items": [
     {
       "prefix": "edgelab_live_a1b2c3d4",
       "created_at": "2025-01-15T10:00:00Z",
       "last_used_at": "2025-03-20T14:30:00Z",
       "scopes": ["profile:read", "knowledge:read", "..."]
     }
-  ]
+  ],
+  "total": 1,
+  "limit": 20,
+  "offset": 0,
+  "has_more": false
 }
 ```
 

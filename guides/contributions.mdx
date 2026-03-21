@@ -46,8 +46,9 @@ curl -X POST https://platform.edgelab.su/api/v1/contributions/submit \
     "type": "skill",
     "title": "Мониторинг цен CoinGecko",
     "description": "Скилл для AI-агента: получение цен, графиков, алертов",
-    "repo_url": "https://github.com/username/coingecko-skill",
-    "audience": "intermediate"
+    "github_url": "https://github.com/username/coingecko-skill",
+    "target_audience": "intermediate",
+    "problem_solved": "Нет простого способа получать крипто-цены и строить графики в AI-агенте"
   }'
 ```
 
@@ -65,14 +66,15 @@ response = requests.post(
         "type": "skill",
         "title": "Мониторинг цен CoinGecko",
         "description": "Скилл для AI-агента: получение цен, графиков, алертов",
-        "repo_url": "https://github.com/username/coingecko-skill",
-        "audience": "intermediate"
+        "github_url": "https://github.com/username/coingecko-skill",
+        "target_audience": "intermediate",
+        "problem_solved": "Нет простого способа получать крипто-цены и строить графики в AI-агенте"
     }
 )
 
 result = response.json()
-print(f"ID: {result['data']['id']}")
-print(f"Статус: {result['data']['status']}")
+print(f"ID: {result['id']}")
+print(f"Статус: {result['status']}")
 ```
 
 </CodeGroup>
@@ -118,7 +120,7 @@ response = requests.get(
     headers={"Authorization": f"Bearer {os.environ['EDGELAB_API_KEY']}"}
 )
 
-for contrib in response.json()["data"]:
+for contrib in response.json()["items"]:
     print(f"{contrib['title']} -- {contrib['status']}")
 ```
 
@@ -128,8 +130,7 @@ for contrib in response.json()["data"]:
 
 ```json
 {
-  "ok": true,
-  "data": [
+  "items": [
     {
       "id": "ctrb_abc123",
       "title": "Мониторинг цен CoinGecko",
@@ -138,7 +139,11 @@ for contrib in response.json()["data"]:
       "submitted_at": "2025-03-15T10:00:00Z",
       "review_comment": null
     }
-  ]
+  ],
+  "total": 1,
+  "limit": 20,
+  "offset": 0,
+  "has_more": false
 }
 ```
 

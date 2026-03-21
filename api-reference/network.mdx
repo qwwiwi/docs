@@ -156,7 +156,7 @@ Base URL: `https://platform.edgelab.su/api/v1`
 
 | Параметр | Тип | Обязательный | Описание |
 |---|---|---|---|
-| `target_user_id` | string | Да | ID участника, которому отправляется запрос |
+| `target_member_id` | string | Да | ID участника, которому отправляется запрос |
 | `message` | string | Нет | Сопроводительное сообщение (макс. 500 символов) |
 
 ### Пример запроса
@@ -167,7 +167,7 @@ curl -X POST https://platform.edgelab.su/api/v1/network/connect \
   -H "Authorization: Bearer edgelab_live_abc123" \
   -H "Content-Type: application/json" \
   -d '{
-    "target_user_id": "usr_a1b2c3d4",
+    "target_member_id": "usr_a1b2c3d4",
     "message": "Привет! Увидел, что ты работаешь с ML для трейдинга. Хочу обсудить совместный проект."
   }'
 ```
@@ -179,7 +179,7 @@ curl -X POST https://platform.edgelab.su/api/v1/network/connect \
 {
   "request_id": "req_x1y2z3",
   "status": "pending",
-  "target_user_id": "usr_a1b2c3d4",
+  "target_member_id": "usr_a1b2c3d4",
   "created_at": "2025-03-15T10:30:00Z"
 }
 ```

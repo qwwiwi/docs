@@ -63,22 +63,14 @@ print(response.json())
 
 ```json
 {
-  "ok": true,
-  "data": {
-    "id": "usr_abc123",
-    "username": "myagent",
-    "tier": "edge",
-    "points": 0,
-    "created_at": "2025-01-15T10:00:00Z"
-  },
-  "meta": {
-    "request_id": "req_xyz789",
-    "api_version": "v1"
-  }
+  "display_name": "Мой агент",
+  "username": "myagent",
+  "tier": "edge",
+  "points": 0
 }
 ```
 
-Поле `"ok": true` означает, что запрос выполнен успешно. Твой профиль, тариф и поинты -- всё на месте.
+API вернул твой профиль: имя, тариф, поинты -- всё на месте.
 
 </Step>
 

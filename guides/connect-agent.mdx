@@ -23,9 +23,9 @@ description: "Пошаговое руководство: от регистрац
 
 | Тариф | Доступ |
 |---|---|
-| **Edge** | Knowledge (read-only), профиль, поддержка |
-| **Pro** | Всё из Edge + Network, Events, Contributions |
-| **VIP** | Всё из Pro + управление событиями, созвон с основателем |
+| **Edge** | Профиль, знания, события (чтение), участники (чтение) |
+| **Pro** | Всё из Edge + поддержка, contributions, connect-запросы, предложение событий |
+| **VIP** | Всё из Pro + персональный созвон с основателем |
 
 </Step>
 
@@ -117,8 +117,11 @@ response = requests.get(
 )
 
 data = response.json()
-print(f"Статус: {'OK' if data['ok'] else 'Ошибка'}")
-print(f"Материалов: {len(data['data'])}")
+if response.status_code == 200:
+    print(f"Статус: OK")
+    print(f"Материалов: {len(data['items'])}")
+else:
+    print(f"Ошибка: {data['error']['message']}")
 ```
 
 </CodeGroup>
@@ -127,8 +130,7 @@ print(f"Материалов: {len(data['data'])}")
 
 ```json
 {
-  "ok": true,
-  "data": [
+  "items": [
     {
       "id": "knw_abc123",
       "title": "Введение в AI-агентов",
@@ -142,11 +144,10 @@ print(f"Материалов: {len(data['data'])}")
       "tier_required": "edge"
     }
   ],
-  "meta": {
-    "request_id": "req_xyz789",
-    "api_version": "v1",
-    "total": 2
-  }
+  "total": 2,
+  "limit": 20,
+  "offset": 0,
+  "has_more": false
 }
 ```
 
@@ -176,26 +177,20 @@ GET /knowledge/search?q=scout+pattern
 ### Events -- смотреть события
 
 ```bash
-# Ближайшие события (Pro+)
+# Ближайшие события
 GET /events
 
 # Детали события
 GET /events/{id}
-
-# Зарегистрироваться
-POST /events/{id}/register
 ```
 
 ### Network -- искать участников
 
 ```bash
-# Список участников (Pro+)
+# Список участников
 GET /network/members
 
-# Профиль участника
-GET /network/members/{id}
-
-# Запрос на нетворкинг
+# Запрос на нетворкинг (Pro+)
 POST /network/connect
 ```
 
@@ -234,12 +229,12 @@ GET /contributions/my
 </Step>
 
 <Step title="Действие">
-Выполняет действие: регистрация, подключение, отправка.
+Выполняет действие: подключение, отправка.
 </Step>
 
 </Steps>
 
-Пример -- найти и зарегистрироваться на событие:
+Пример -- найти и посмотреть детали события:
 
 ```python
 import requests
@@ -250,21 +245,16 @@ BASE_URL = "https://platform.edgelab.su/api/v1"
 HEADERS = {"Authorization": f"Bearer {API_KEY}"}
 
 # 1. Поиск -- список событий
-events = requests.get(f"{BASE_URL}/events", headers=HEADERS).json()
+response = requests.get(f"{BASE_URL}/events", headers=HEADERS)
+events = response.json()
 
 # 2. Детали -- первое предстоящее событие
-event = events["data"][0]
+event = events["items"][0]
 event_details = requests.get(
     f"{BASE_URL}/events/{event['id']}", headers=HEADERS
 ).json()
-print(f"Событие: {event_details['data']['title']}")
-print(f"Дата: {event_details['data']['starts_at']}")
-
-# 3. Действие -- регистрация
-result = requests.post(
-    f"{BASE_URL}/events/{event['id']}/register", headers=HEADERS
-).json()
-print(f"Регистрация: {'OK' if result['ok'] else result['error']['message']}")
+print(f"Событие: {event_details['title']}")
+print(f"Дата: {event_details['starts_at']}")
 ```
 
 ## Обработка ошибок
@@ -324,7 +314,7 @@ Rate limit -- 60 запросов в минуту. Для большинства
 | Частота | Endpoint | Зачем |
 |---|---|---|
 | Каждые 5 мин | `GET /notifications/unread-count` | Новые уведомления (уроки, события, ответы) |
-| Раз в день (утро) | `GET /knowledge/list?sort=newest&limit=5` | Новые учебные материалы |
+| Раз в день (утро) | `GET /knowledge/list?sort=created_at_desc&limit=5` | Новые учебные материалы |
 | Раз в день (утро) | `GET /events?status=upcoming&limit=5` | Предстоящие события |
 
 ### Для Pro и VIP

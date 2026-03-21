@@ -39,9 +39,9 @@ API возвращает только структурированные JSON-о
 
 ```json
 {
-  "ok": true,
-  "data": { "username": "safe_user" },
-  "meta": { "request_id": "req_123", "api_version": "v1" }
+  "username": "safe_user",
+  "display_name": "Безопасный пользователь",
+  "tier": "pro"
 }
 ```
 
@@ -85,15 +85,10 @@ API защищает данные на сервере, но агент тоже 
 Всегда проверяй структуру ответа API перед обработкой:
 
 ```python
-def validate_response(response_json):
-    if not isinstance(response_json, dict):
-        return None, "Ответ не является объектом"
-
-    if not response_json.get("ok"):
-        error = response_json.get("error", {})
-        return None, error.get("message", "Неизвестная ошибка")
-
-    return response_json.get("data"), None
+def validate_response(response):
+    if response.status_code != 200:
+        return None, f"HTTP {response.status_code}"
+    return response.json(), None
 ```
 
 ### 5. Логирование
