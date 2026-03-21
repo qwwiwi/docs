@@ -166,3 +166,85 @@ VIP дополнительно: `support:call-request`
 ## Версионирование
 
 Текущая версия API -- `v1`. Версия указана в URL: `/api/v1/...`. При появлении новых версий старые продолжат работать в течение переходного периода.
+
+## Все endpoints
+
+Полный каталог доступных endpoints EdgeLab API.
+
+### Profile
+
+| Метод | Endpoint | Описание | Scope |
+|---|---|---|---|
+| `GET` | `/profile/me` | Мой профиль | `profile:read` |
+| `PATCH` | `/profile/me` | Обновить профиль | `profile:write` |
+| `GET` | `/profile/members` | Список участников сообщества | `network:read` |
+
+### Auth / API Keys
+
+| Метод | Endpoint | Описание | Scope |
+|---|---|---|---|
+| `POST` | `/auth/keys` | Создать API-ключ | `profile:write` |
+| `GET` | `/auth/keys` | Список моих ключей | `profile:read` |
+| `POST` | `/auth/keys/rotate` | Ротация ключа (старый деактивируется) | `profile:write` |
+| `POST` | `/auth/keys/revoke` | Отозвать ключ | `profile:write` |
+| `GET` | `/auth/me` | Информация о текущем ключе | `profile:read` |
+
+### Notifications
+
+| Метод | Endpoint | Описание | Scope |
+|---|---|---|---|
+| `GET` | `/notifications` | Список уведомлений | `profile:read` |
+| `GET` | `/notifications/unread-count` | Количество непрочитанных | `profile:read` |
+| `PATCH` | `/notifications/{id}/read` | Отметить прочитанным | `profile:write` |
+
+### Knowledge
+
+| Метод | Endpoint | Описание | Scope |
+|---|---|---|---|
+| `GET` | `/knowledge/search` | Полнотекстовый поиск материалов | `knowledge:read` |
+| `GET` | `/knowledge/list` | Список по категориям | `knowledge:read` |
+| `GET` | `/knowledge/{id}` | Детали материала | `knowledge:read` |
+| `GET` | `/knowledge/{id}/files` | Файлы и GitHub-ссылки | `knowledge:read` |
+
+### Events
+
+| Метод | Endpoint | Описание | Scope |
+|---|---|---|---|
+| `GET` | `/events` | Список событий | `events:read` |
+| `GET` | `/events/{id}` | Детали события | `events:read` |
+| `GET` | `/events/{id}/calendar` | Google Calendar / .ics | `events:read` |
+| `POST` | `/events/propose` | Предложить событие | `events:write` |
+| `GET` | `/events/proposals` | Мои предложения | `events:write` |
+
+### Network
+
+| Метод | Endpoint | Описание | Scope |
+|---|---|---|---|
+| `GET` | `/network/members` | Поиск участников + фильтры | `network:read` |
+| `GET` | `/network/matches` | Мои match'и по профилю | `network:read` |
+| `POST` | `/network/connect` | Отправить connect request | `network:write` |
+| `GET` | `/network/requests` | Входящие/исходящие запросы | `network:read` |
+| `PATCH` | `/network/requests/{id}` | Принять или отклонить | `network:write` |
+
+### Contributions
+
+| Метод | Endpoint | Описание | Scope |
+|---|---|---|---|
+| `POST` | `/contributions/submit` | Отправить скилл/урок/use case | `contributions:write` |
+| `GET` | `/contributions/my` | Мои submissions | `contributions:write` |
+| `GET` | `/contributions/{id}` | Детали submission | `contributions:write` |
+
+### Support
+
+| Метод | Endpoint | Описание | Scope |
+|---|---|---|---|
+| `GET` | `/support/faq` | FAQ (без авторизации) | -- |
+| `POST` | `/support/tickets` | Создать тикет | `support:write` |
+| `GET` | `/support/tickets` | Мои тикеты | `support:write` |
+| `GET` | `/support/tickets/{id}` | Детали тикета + ответы | `support:write` |
+| `POST` | `/support/tickets/{id}/reply` | Ответить в тикет | `support:write` |
+| `POST` | `/support/call-request` | Запрос созвона с Даши (VIP) | `support:call-request` |
+
+<Info>
+**33 endpoints** в 7 модулях. Каждый модуль подробно описан в соответствующем разделе API Reference.
+</Info>
