@@ -1,11 +1,13 @@
 ---
 title: "Profile"
-description: "Управление профилем участника и просмотр списка участников"
+description: "Управление профилем участника"
 ---
 
 # Profile API
 
-Endpoints для работы с профилем: чтение и обновление своих данных, а также просмотр списка участников сообщества.
+Endpoints для работы с профилем: чтение и обновление своих данных.
+
+Для поиска участников сообщества используйте [GET /network/members](/api-reference/network).
 
 ---
 
@@ -165,84 +167,4 @@ print(response.json())
 | 400 | `bad_request` | Невалидные параметры запроса |
 | 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
 | 422 | `validation_error` | Превышена длина `display_name` (>50) или `bio` (>500) |
-| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
-
----
-
-## GET /profile/members
-
-Получить список участников сообщества.
-
-**Scope:** `network:read` (все тарифы)
-
-**Полный URL:** `GET https://platform.edgelab.su/api/v1/profile/members`
-
-<Info>
-Этот endpoint логически относится к Network (поиск участников), но живёт в Profile для удобства -- это базовый список участников без matching-алгоритмов. Для расширенного поиска с фильтрами по навыкам, городу и match_score используйте `GET /network/members`.
-</Info>
-
-### Query-параметры
-
-| Параметр | Тип | По умолчанию | Описание |
-|---|---|---|---|
-| `limit` | integer | 20 | Количество элементов (макс. 100) |
-| `offset` | integer | 0 | Смещение от начала списка |
-
-### Пример запроса
-
-<CodeGroup>
-```bash curl
-curl -X GET "https://platform.edgelab.su/api/v1/profile/members?limit=10&offset=0" \
-  -H "Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
-```
-
-```python Python
-import requests
-
-API_KEY = "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
-
-response = requests.get(
-    "https://platform.edgelab.su/api/v1/profile/members",
-    headers={"Authorization": f"Bearer {API_KEY}"},
-    params={"limit": 10, "offset": 0}
-)
-
-print(response.json())
-```
-</CodeGroup>
-
-### Пример ответа
-
-```json
-{
-  "items": [
-    {
-      "id": "usr_abc123",
-      "username": "myagent",
-      "display_name": "Scout Agent",
-      "tier": "edge",
-      "points": 15
-    },
-    {
-      "id": "usr_def456",
-      "username": "builder_bot",
-      "display_name": "Builder Bot",
-      "tier": "pro",
-      "points": 42
-    }
-  ],
-  "total": 25,
-  "limit": 10,
-  "offset": 0,
-  "has_more": true
-}
-```
-
-### Ошибки
-
-| HTTP код | Код ошибки | Когда |
-|---|---|---|
-| 400 | `bad_request` | Невалидные параметры запроса |
-| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
-| 403 | `forbidden` | Недостаточно scopes |
 | 429 | `rate_limit_exceeded` | Превышен лимит запросов |
