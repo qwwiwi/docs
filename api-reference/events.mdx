@@ -13,6 +13,10 @@ Edge Lab объединяет участников через события: о
 Base URL: `https://platform.edgelab.su/api/v1`
 </Note>
 
+<Info>
+**Доступность:** Чтение событий (`events:read`) доступно на **всех тарифах** (Edge, Pro, VIP). Создание событий (`events:write`) -- только Pro и VIP.
+</Info>
+
 ## Типы событий
 
 | Тип | Описание |
@@ -29,7 +33,7 @@ Base URL: `https://platform.edgelab.su/api/v1`
 
 Список событий с фильтрацией по статусу, типу и городу.
 
-**Scope:** `events:read`
+**Scope:** `events:read` (все тарифы)
 
 **Полный URL:** `GET https://platform.edgelab.su/api/v1/events`
 
@@ -53,7 +57,7 @@ GET /api/v1/events?status=upcoming&event_type=online_live&limit=5
 
 ```json
 {
-  "events": [
+  "items": [
     {
       "id": "evt_w1o2r3k4",
       "title": "Воркшоп: AI-агенты для трейдинга",
@@ -100,10 +104,20 @@ GET /api/v1/events?status=upcoming&event_type=online_live&limit=5
     }
   ],
   "total": 5,
-  "limit": 20,
-  "offset": 0
+  "limit": 5,
+  "offset": 0,
+  "has_more": false
 }
 ```
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 400 | `bad_request` | Невалидные параметры запроса |
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 403 | `forbidden` | Недостаточно scopes |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
 
 ---
 
@@ -111,7 +125,7 @@ GET /api/v1/events?status=upcoming&event_type=online_live&limit=5
 
 Полные детали конкретного события.
 
-**Scope:** `events:read`
+**Scope:** `events:read` (все тарифы)
 
 **Полный URL:** `GET https://platform.edgelab.su/api/v1/events/{id}`
 
@@ -143,21 +157,24 @@ GET /api/v1/events?status=upcoming&event_type=online_live&limit=5
   "registered_count": 47,
   "is_registered": false,
   "is_recurring": false,
-  "knowledge_link": null,
+  "knowledge_id": null,
   "calendar_url": "https://platform.edgelab.su/api/v1/events/evt_w1o2r3k4/calendar",
   "created_at": "2025-03-10T10:00:00Z"
 }
 ```
 
 <Info>
-Поле `knowledge_link` содержит ID записи в Knowledge API (`kn_...`), если после события была опубликована запись. Для прошедших событий это ссылка на материал категории `live`.
+Поле `knowledge_id` содержит ID записи в Knowledge API (`kn_...`), если после события была опубликована запись. Для прошедших событий это ссылка на материал категории `live`.
 </Info>
 
 ### Ошибки
 
-| HTTP код | Когда |
-|---|---|
-| `404 Not Found` | Событие не найдено |
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 403 | `forbidden` | Недостаточно scopes |
+| 404 | `not_found` | Событие не найдено |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
 
 ---
 
@@ -165,7 +182,7 @@ GET /api/v1/events?status=upcoming&event_type=online_live&limit=5
 
 Получить ссылку для добавления события в Google Calendar или файл .ics для других календарей.
 
-**Scope:** `events:read`
+**Scope:** `events:read` (все тарифы)
 
 **Полный URL:** `GET https://platform.edgelab.su/api/v1/events/{id}/calendar`
 
@@ -199,6 +216,14 @@ GET /api/v1/events?status=upcoming&event_type=online_live&limit=5
 }
 ```
 
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 404 | `not_found` | Событие не найдено |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
+
 <Tip>
 Google Calendar интеграция -- одна из ключевых фич Edge Lab. Агент может автоматически добавлять интересные события в календарь хозяина, предварительно спросив разрешение.
 </Tip>
@@ -209,9 +234,13 @@ Google Calendar интеграция -- одна из ключевых фич Ed
 
 Предложить новое событие для сообщества. Предложение проходит модерацию перед публикацией.
 
-**Scope:** `events:write`
+**Scope:** `events:write` (Pro, VIP)
 
 **Полный URL:** `POST https://platform.edgelab.su/api/v1/events/propose`
+
+<Info>
+Создание событий доступно только участникам с scope `events:write` (тарифы **Pro** и **VIP**). Участники на тарифе Edge могут просматривать события, но не предлагать новые.
+</Info>
 
 ### Параметры запроса (body)
 
@@ -228,18 +257,23 @@ Google Calendar интеграция -- одна из ключевых фич Ed
 
 ### Пример запроса
 
-```json
-{
-  "title": "Митап: Крипто и AI в Бангкоке",
-  "description": "Неформальная встреча для обсуждения пересечения крипто и AI. Покажу свой стек агентов, обсудим кейсы участников.",
-  "event_type": "meetup",
-  "proposed_date": "2025-04-05T17:00:00+07:00",
-  "duration_min": 120,
-  "city": "bangkok"
-}
+<CodeGroup>
+```bash cURL
+curl -X POST https://platform.edgelab.su/api/v1/events/propose \
+  -H "Authorization: Bearer edgelab_live_abc123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Митап: Крипто и AI в Бангкоке",
+    "description": "Неформальная встреча для обсуждения пересечения крипто и AI.",
+    "event_type": "meetup",
+    "proposed_date": "2025-04-05T17:00:00+07:00",
+    "duration_min": 120,
+    "city": "bangkok"
+  }'
 ```
+</CodeGroup>
 
-### Пример ответа
+### Пример ответа (201 Created)
 
 ```json
 {
@@ -261,10 +295,13 @@ Google Calendar интеграция -- одна из ключевых фич Ed
 
 ### Ошибки
 
-| HTTP код | Когда |
-|---|---|
-| `422 Validation Error` | Дата ранее 7 дней от сегодня, или пропущены обязательные поля |
-| `429 Too Many Requests` | Уже есть 2 pending-предложения |
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 400 | `bad_request` | Невалидные параметры запроса |
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 403 | `forbidden` | Тариф Edge -- scope `events:write` недоступен |
+| 422 | `validation_error` | Дата ранее 7 дней от сегодня, или пропущены обязательные поля |
+| 429 | `rate_limit_exceeded` | Уже есть 2 pending-предложения или превышен rate limit |
 
 ---
 
@@ -272,7 +309,7 @@ Google Calendar интеграция -- одна из ключевых фич Ed
 
 Список собственных предложений на события и их статусы.
 
-**Scope:** `events:read`
+**Scope:** `events:read` (все тарифы)
 
 **Полный URL:** `GET https://platform.edgelab.su/api/v1/events/proposals`
 
@@ -280,7 +317,7 @@ Google Calendar интеграция -- одна из ключевых фич Ed
 
 ```json
 {
-  "proposals": [
+  "items": [
     {
       "proposal_id": "prop_m1e2e3t4",
       "title": "Митап: Крипто и AI в Бангкоке",
@@ -299,7 +336,10 @@ Google Calendar интеграция -- одна из ключевых фич Ed
       "reviewer_comment": "Отличная идея, запускаем!"
     }
   ],
-  "total": 2
+  "total": 2,
+  "limit": 20,
+  "offset": 0,
+  "has_more": false
 }
 ```
 
@@ -310,6 +350,13 @@ Google Calendar интеграция -- одна из ключевых фич Ed
 | `pending_review` | На модерации |
 | `approved` | Одобрено, создано событие (см. `event_id`) |
 | `rejected` | Отклонено (см. `reviewer_comment`) |
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
 
 ---
 
@@ -336,12 +383,12 @@ Google Calendar интеграция -- одна из ключевых фич Ed
 
 После завершения события (особенно эфиров и AMA) запись публикуется в Knowledge API с категорией `live`:
 
-- `event.knowledge_link` → `kn_...` ID в Knowledge API
+- `event.knowledge_id` → `kn_...` ID в Knowledge API
 - Материал содержит `transcript` (расшифровку) и `key_takeaways` (ключевые тезисы)
 - Доступен через `GET /knowledge/{id}`
 
 <Tip>
-Паттерн для агента: после прошедшего события проверьте `knowledge_link` -- если запись уже опубликована, можно предложить хозяину посмотреть ключевые тезисы вместо полной записи.
+Паттерн для агента: после прошедшего события проверьте `knowledge_id` -- если запись уже опубликована, можно предложить хозяину посмотреть ключевые тезисы вместо полной записи.
 </Tip>
 
 ---
@@ -351,6 +398,6 @@ Google Calendar интеграция -- одна из ключевых фич Ed
 1. **Обзор:** `GET /events?status=upcoming` -- показать хозяину ближайшие события
 2. **Фильтр:** добавить `event_type=workshop` или `city=moscow` по запросу
 3. **Календарь:** `GET /events/{id}/calendar` -- добавить в Google Calendar хозяина
-4. **Предложение:** `POST /events/propose` -- помочь хозяину предложить своё событие
+4. **Предложение:** `POST /events/propose` -- помочь хозяину предложить своё событие (Pro/VIP)
 5. **Мониторинг:** `GET /events/proposals` -- проверять статус предложений
-6. **Записи:** для прошедших событий -- `knowledge_link` → Knowledge API
+6. **Записи:** для прошедших событий -- `knowledge_id` → Knowledge API

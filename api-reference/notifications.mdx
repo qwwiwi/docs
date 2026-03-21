@@ -3,9 +3,25 @@ title: "Notifications"
 description: "Получение и управление уведомлениями"
 ---
 
-# Notifications endpoints
+# Notifications API
 
 Endpoints для работы с уведомлениями: получение списка, отметка прочитанными, подсчёт непрочитанных.
+
+---
+
+## Типы уведомлений
+
+| Тип | Описание |
+|-----|----------|
+| `contribution_approved` | Contribution одобрен и опубликован |
+| `contribution_rejected` | Contribution отклонён |
+| `points_earned` | Начислены поинты |
+| `endorsement_received` | Получен endorsement от участника |
+| `network_request` | Новый запрос на подключение |
+| `network_accepted` | Запрос на подключение принят |
+| `support_ticket_answered` | Получен ответ на тикет в поддержку |
+| `support_call_updated` | Обновление статуса запроса на созвон (VIP) |
+| `event_reminder` | Напоминание о предстоящем событии |
 
 ---
 
@@ -21,15 +37,15 @@ Endpoints для работы с уведомлениями: получение 
 
 | Параметр | Тип | По умолчанию | Описание |
 |---|---|---|---|
-| `page` | integer | 1 | Номер страницы |
-| `per_page` | integer | 20 | Количество на странице (макс. 100) |
+| `limit` | integer | 20 | Количество элементов (макс. 100) |
+| `offset` | integer | 0 | Смещение от начала списка |
 | `unread_only` | boolean | false | Показывать только непрочитанные |
 
 ### Пример запроса
 
 <CodeGroup>
 ```bash curl
-curl -X GET "https://platform.edgelab.su/api/v1/notifications?unread_only=true" \
+curl -X GET "https://platform.edgelab.su/api/v1/notifications?unread_only=true&limit=20&offset=0" \
   -H "Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
 ```
 
@@ -41,7 +57,7 @@ API_KEY = "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
 response = requests.get(
     "https://platform.edgelab.su/api/v1/notifications",
     headers={"Authorization": f"Bearer {API_KEY}"},
-    params={"unread_only": True}
+    params={"unread_only": True, "limit": 20, "offset": 0}
 )
 
 print(response.json())
@@ -52,8 +68,7 @@ print(response.json())
 
 ```json
 {
-  "ok": true,
-  "data": [
+  "items": [
     {
       "id": "ntf_001",
       "type": "contribution_approved",
@@ -69,46 +84,57 @@ print(response.json())
       "message": "+10 поинтов за одобренный contribution.",
       "read": false,
       "created_at": "2025-03-15T10:00:01Z"
+    },
+    {
+      "id": "ntf_003",
+      "type": "support_ticket_answered",
+      "title": "Ответ на тикет",
+      "message": "Получен ответ на тикет «API возвращает 429 при низкой нагрузке».",
+      "read": false,
+      "created_at": "2025-03-15T15:30:00Z"
     }
   ],
-  "meta": {
-    "request_id": "req_ntf001",
-    "api_version": "v1",
-    "pagination": {
-      "page": 1,
-      "per_page": 20,
-      "total": 2,
-      "total_pages": 1
-    }
-  }
+  "total": 3,
+  "limit": 20,
+  "offset": 0,
+  "has_more": false
 }
 ```
 
 ### Поля ответа
 
-<ResponseField name="data[].id" type="string" required>
+<ResponseField name="items[].id" type="string" required>
   Уникальный идентификатор уведомления.
 </ResponseField>
 
-<ResponseField name="data[].type" type="string" required>
-  Тип уведомления (например, `contribution_approved`, `points_earned`, `endorsement_received`).
+<ResponseField name="items[].type" type="string" required>
+  Тип уведомления (см. таблицу типов выше).
 </ResponseField>
 
-<ResponseField name="data[].title" type="string" required>
+<ResponseField name="items[].title" type="string" required>
   Заголовок уведомления.
 </ResponseField>
 
-<ResponseField name="data[].message" type="string" required>
+<ResponseField name="items[].message" type="string" required>
   Текст уведомления.
 </ResponseField>
 
-<ResponseField name="data[].read" type="boolean" required>
+<ResponseField name="items[].read" type="boolean" required>
   Прочитано ли уведомление.
 </ResponseField>
 
-<ResponseField name="data[].created_at" type="string" required>
+<ResponseField name="items[].created_at" type="string" required>
   Дата и время создания (ISO 8601).
 </ResponseField>
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 400 | `bad_request` | Невалидные параметры запроса |
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 403 | `forbidden` | Недостаточно scopes |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
 
 ---
 
@@ -154,24 +180,19 @@ print(response.json())
 
 ```json
 {
-  "ok": true,
-  "data": {
-    "id": "ntf_001",
-    "read": true,
-    "read_at": "2025-03-15T14:30:00Z"
-  },
-  "meta": {
-    "request_id": "req_ntf002",
-    "api_version": "v1"
-  }
+  "id": "ntf_001",
+  "read": true,
+  "read_at": "2025-03-15T14:30:00Z"
 }
 ```
 
 ### Ошибки
 
-| HTTP код | Когда |
-|---|---|
-| 404 Not Found | Уведомление с указанным id не найдено или принадлежит другому пользователю |
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 404 | `not_found` | Уведомление с указанным id не найдено или принадлежит другому пользователю |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
 
 ---
 
@@ -209,13 +230,13 @@ print(response.json())
 
 ```json
 {
-  "ok": true,
-  "data": {
-    "unread_count": 5
-  },
-  "meta": {
-    "request_id": "req_ntf003",
-    "api_version": "v1"
-  }
+  "unread_count": 5
 }
 ```
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |

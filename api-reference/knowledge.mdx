@@ -21,8 +21,12 @@ Base URL: `https://platform.edgelab.su/api/v1`
 </Note>
 
 <Info>
-Все тарифы (Edge, Pro, VIP) имеют доступ к Knowledge API. Ограничений по тарифу нет.
+Все тарифы (Edge, Pro, VIP) имеют доступ к Knowledge API через scope `knowledge:read`. Ограничений по тарифу нет.
 </Info>
+
+<Warning>
+**Файлы хранятся на GitHub.** API возвращает только ссылки на GitHub-репозиторий (`github_url`, `raw_url`). Проксирование и скачивание файлов через API не поддерживается -- используйте `raw_url` для прямого скачивания с GitHub.
+</Warning>
 
 ---
 
@@ -30,7 +34,7 @@ Base URL: `https://platform.edgelab.su/api/v1`
 
 Полнотекстовый поиск по всем материалам базы знаний.
 
-**Scope:** `knowledge:read`
+**Scope:** `knowledge:read` (все тарифы)
 
 **Полный URL:** `GET https://platform.edgelab.su/api/v1/knowledge/search`
 
@@ -45,15 +49,32 @@ Base URL: `https://platform.edgelab.su/api/v1`
 
 ### Пример запроса
 
+<CodeGroup>
+```bash cURL
+curl "https://platform.edgelab.su/api/v1/knowledge/search?q=trading+bot&category=skills&limit=5" \
+  -H "Authorization: Bearer edgelab_live_abc123"
 ```
-GET /api/v1/knowledge/search?q=trading+bot&category=skills&limit=5
+
+```python Python
+import requests
+
+API_KEY = "edgelab_live_abc123"
+
+response = requests.get(
+    "https://platform.edgelab.su/api/v1/knowledge/search",
+    headers={"Authorization": f"Bearer {API_KEY}"},
+    params={"q": "trading bot", "category": "skills", "limit": 5}
+)
+
+print(response.json())
 ```
+</CodeGroup>
 
 ### Пример ответа
 
 ```json
 {
-  "results": [
+  "items": [
     {
       "id": "kn_t1r2a3d4",
       "title": "Создание торгового бота на Python",
@@ -79,9 +100,19 @@ GET /api/v1/knowledge/search?q=trading+bot&category=skills&limit=5
   ],
   "total": 8,
   "limit": 5,
-  "offset": 0
+  "offset": 0,
+  "has_more": true
 }
 ```
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 400 | `bad_request` | Отсутствует обязательный параметр `q` |
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 403 | `forbidden` | Недостаточно scopes |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
 
 ---
 
@@ -89,7 +120,7 @@ GET /api/v1/knowledge/search?q=trading+bot&category=skills&limit=5
 
 Список материалов с фильтрацией и сортировкой. В отличие от search, не требует поискового запроса.
 
-**Scope:** `knowledge:read`
+**Scope:** `knowledge:read` (все тарифы)
 
 **Полный URL:** `GET https://platform.edgelab.su/api/v1/knowledge/list`
 
@@ -104,9 +135,26 @@ GET /api/v1/knowledge/search?q=trading+bot&category=skills&limit=5
 
 ### Пример запроса
 
+<CodeGroup>
+```bash cURL
+curl "https://platform.edgelab.su/api/v1/knowledge/list?category=live&sort=created_at_desc&limit=3" \
+  -H "Authorization: Bearer edgelab_live_abc123"
 ```
-GET /api/v1/knowledge/list?category=live&sort=created_at_desc&limit=3
+
+```python Python
+import requests
+
+API_KEY = "edgelab_live_abc123"
+
+response = requests.get(
+    "https://platform.edgelab.su/api/v1/knowledge/list",
+    headers={"Authorization": f"Bearer {API_KEY}"},
+    params={"category": "live", "sort": "created_at_desc", "limit": 3}
+)
+
+print(response.json())
 ```
+</CodeGroup>
 
 ### Пример ответа
 
@@ -130,9 +178,19 @@ GET /api/v1/knowledge/list?category=live&sort=created_at_desc&limit=3
   ],
   "total": 14,
   "limit": 3,
-  "offset": 0
+  "offset": 0,
+  "has_more": true
 }
 ```
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 400 | `bad_request` | Невалидные параметры запроса |
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 403 | `forbidden` | Недостаточно scopes |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
 
 ---
 
@@ -140,7 +198,7 @@ GET /api/v1/knowledge/list?category=live&sort=created_at_desc&limit=3
 
 Полные детали материала, включая содержимое и специфичные поля по категории.
 
-**Scope:** `knowledge:read`
+**Scope:** `knowledge:read` (все тарифы)
 
 **Полный URL:** `GET https://platform.edgelab.su/api/v1/knowledge/{id}`
 
@@ -204,9 +262,12 @@ GET /api/v1/knowledge/list?category=live&sort=created_at_desc&limit=3
 
 ### Ошибки
 
-| HTTP код | Когда |
-|---|---|
-| `404 Not Found` | Материал с указанным ID не найден |
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 403 | `forbidden` | Недостаточно scopes |
+| 404 | `not_found` | Материал с указанным ID не найден |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
 
 ---
 
@@ -214,7 +275,7 @@ GET /api/v1/knowledge/list?category=live&sort=created_at_desc&limit=3
 
 Список файлов, прикреплённых к материалу. Файлы хранятся на GitHub -- API возвращает ссылки для скачивания.
 
-**Scope:** `knowledge:read`
+**Scope:** `knowledge:read` (все тарифы)
 
 **Полный URL:** `GET https://platform.edgelab.su/api/v1/knowledge/{id}/files`
 
@@ -228,7 +289,7 @@ GET /api/v1/knowledge/list?category=live&sort=created_at_desc&limit=3
 
 ```json
 {
-  "files": [
+  "items": [
     {
       "filename": "dca-bot-config.py",
       "size_bytes": 4521,
@@ -244,13 +305,24 @@ GET /api/v1/knowledge/list?category=live&sort=created_at_desc&limit=3
       "raw_url": "https://raw.githubusercontent.com/edgelab-su/knowledge-files/main/lessons/dca-bot/README.md"
     }
   ],
-  "total": 2
+  "total": 2,
+  "limit": 20,
+  "offset": 0,
+  "has_more": false
 }
 ```
 
 <Warning>
-Файлы хранятся на GitHub, а не загружаются через API. Для скачивания используйте `raw_url`. Для просмотра в браузере -- `github_url`.
+Файлы хранятся на GitHub, а не загружаются через API. API не проксирует файлы -- используйте `raw_url` для прямого скачивания с GitHub. Для просмотра в браузере -- `github_url`.
 </Warning>
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 404 | `not_found` | Материал с указанным ID не найден |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
 
 ---
 
