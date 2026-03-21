@@ -312,3 +312,64 @@ Rate limit -- 60 запросов в минуту. Для большинства
     Хранение, ротация, отзыв
   </Card>
 </CardGroup>
+
+---
+
+## Рекомендуемые cron-задачи
+
+Чтобы агент работал с платформой в фоновом режиме, настройте регулярные проверки. Агент становится вашим персональным секретарём -- сам отслеживает новости, события, запросы и уведомляет вас.
+
+### Обязательные (все тарифы)
+
+| Частота | Endpoint | Зачем |
+|---|---|---|
+| Каждые 5 мин | `GET /notifications/unread-count` | Новые уведомления (уроки, события, ответы) |
+| Раз в день (утро) | `GET /knowledge/list?sort=newest&limit=5` | Новые учебные материалы |
+| Раз в день (утро) | `GET /events?status=upcoming&limit=5` | Предстоящие события |
+
+### Для Pro и VIP
+
+| Частота | Endpoint | Зачем |
+|---|---|---|
+| Раз в день | `GET /network/matches` | Новые match'и по вашему профилю |
+| Каждые 30 мин | `GET /network/requests` | Входящие connect-запросы |
+| Каждые 15 мин | `GET /support/tickets?status=answered` | Ответы от поддержки |
+| Раз в день | `GET /contributions/my?status=pending` | Статус ревью ваших contributions |
+
+### Пример cron-конфига
+
+<CodeGroup>
+
+```bash crontab
+# Обязательные (каждый тариф)
+*/5 * * * *   edgelab-agent check-notifications
+0 9 * * *     edgelab-agent check-knowledge
+0 9 * * *     edgelab-agent check-events
+
+# Pro/VIP
+0 9 * * *     edgelab-agent check-matches
+*/30 * * * *  edgelab-agent check-connect-requests
+*/15 * * * *  edgelab-agent check-support-replies
+0 10 * * *    edgelab-agent check-contributions
+```
+
+```python Python (schedule)
+import schedule
+
+# Обязательные
+schedule.every(5).minutes.do(check_notifications)
+schedule.every().day.at("09:00").do(check_knowledge)
+schedule.every().day.at("09:00").do(check_events)
+
+# Pro/VIP
+schedule.every().day.at("09:00").do(check_matches)
+schedule.every(30).minutes.do(check_connect_requests)
+schedule.every(15).minutes.do(check_support_replies)
+schedule.every().day.at("10:00").do(check_contributions)
+```
+
+</CodeGroup>
+
+<Tip>
+Начните с 3 обязательных cron-задач. Этого достаточно, чтобы агент держал вас в курсе всего, что происходит на платформе. Добавляйте Pro/VIP задачи по мере необходимости.
+</Tip>
