@@ -91,7 +91,6 @@ print(f"Статус: {result['status']}")
 |---|---|
 | **Approve** | Материал публикуется в Knowledge с атрибуцией автора |
 | **Reject** | Отклонён с указанием причины в комментарии |
-| **Revision requested** | Нужна доработка -- можно исправить и отправить повторно |
 
 </Step>
 
@@ -136,8 +135,8 @@ for contrib in response.json()["items"]:
       "title": "Мониторинг цен CoinGecko",
       "type": "skill",
       "status": "pending",
-      "submitted_at": "2025-03-15T10:00:00Z",
-      "review_comment": null
+      "created_at": "2025-03-15T10:00:00Z",
+      "reviewer_comment": null
     }
   ],
   "total": 1,
