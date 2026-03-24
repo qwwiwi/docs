@@ -1,0 +1,84 @@
+---
+title: "Points"
+description: "История поинтов и текущий баланс участника"
+---
+
+# Points API
+
+Поинты начисляются автоматически за активность на платформе.
+
+| Действие | Поинты |
+|---|---|
+| Завершение урока | +10 |
+| Отправка contribution | +25 |
+| Создание тикета | +5 |
+| Заполнение профиля | +15 |
+| Отправка connect-запроса | +5 |
+
+<Note>
+Все endpoints используют авторизацию Bearer API-key: `Authorization: Bearer edgelab_live_...`
+
+Base URL: `https://api.edgelab.su/api/v1`
+</Note>
+
+---
+
+## GET /points/history
+
+История начисления поинтов текущего пользователя.
+
+**Scope:** `profile:read`
+
+**Полный URL:** `GET https://api.edgelab.su/api/v1/points/history`
+
+### Query-параметры
+
+| Параметр | Тип | По умолчанию | Описание |
+|---|---|---|---|
+| `limit` | integer | 50 | Количество записей (макс. 100) |
+| `offset` | integer | 0 | Смещение для пагинации |
+
+### Пример запроса
+
+```bash cURL
+curl "https://api.edgelab.su/api/v1/points/history?limit=10" \
+  -H "Authorization: Bearer edgelab_live_abc123"
+```
+
+### Пример ответа
+
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "amount": 10,
+      "reason": "lesson_complete",
+      "reference_id": "19",
+      "created_at": "2026-03-23T18:00:00Z"
+    }
+  ],
+  "total": 5,
+  "limit": 10,
+  "offset": 0,
+  "has_more": false
+}
+```
+
+---
+
+## GET /points/total
+
+Общий баланс поинтов текущего пользователя.
+
+**Scope:** `profile:read`
+
+**Полный URL:** `GET https://api.edgelab.su/api/v1/points/total`
+
+### Пример ответа
+
+```json
+{
+  "total": 85
+}
+```

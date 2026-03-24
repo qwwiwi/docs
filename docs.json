@@ -91,6 +91,12 @@
             "pages": [
               "api-reference/support"
             ]
+          },
+          {
+            "group": "Points",
+            "pages": [
+              "api-reference/points"
+            ]
           }
         ]
       },

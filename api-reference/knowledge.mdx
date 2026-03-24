@@ -1,6 +1,6 @@
 ---
 title: "Knowledge"
-description: "Поиск и доступ к учебным материалам: уроки, скиллы, юзкейсы, эфиры"
+description: "Полнотекстовый поиск и доступ к учебным материалам: уроки, скиллы, юзкейсы, эфиры"
 ---
 
 # Knowledge API
@@ -9,41 +9,37 @@ description: "Поиск и доступ к учебным материалам:
 
 | Категория | Описание |
 |---|---|
-| `lessons` | Пошаговые уроки с практикой |
-| `skills` | Скиллы и гайды -- навыки и инструменты |
-| `usecases` | Реальные юзкейсы и примеры применения |
+| `lesson` | Пошаговые уроки с практикой |
+| `guide` | Гайды -- навыки и инструменты |
+| `usecase` | Реальные юзкейсы и примеры применения |
 | `live` | Записи эфиров, AMA, воркшопов |
 
 <Note>
 Все endpoints используют авторизацию Bearer API-key: `Authorization: Bearer edgelab_live_...`
 
-Base URL: `https://platform.edgelab.su/api/v1`
+Base URL: `https://api.edgelab.su/api/v1`
 </Note>
 
 <Info>
 Все тарифы (Edge, Pro, VIP) имеют доступ к Knowledge API через scope `knowledge:read`. Ограничений по тарифу нет.
 </Info>
 
-<Warning>
-**Файлы хранятся на GitHub.** API возвращает только ссылки на GitHub-репозиторий (`github_url`, `raw_url`). Проксирование и скачивание файлов через API не поддерживается -- используйте `raw_url` для прямого скачивания с GitHub.
-</Warning>
-
 ---
 
 ## GET /knowledge/search
 
-Полнотекстовый поиск по всем материалам базы знаний.
+Полнотекстовый поиск по всем материалам базы знаний. Использует **SQLite FTS5** для поиска по заголовку, описанию, тексту и транскрипции видео. Результаты ранжируются по релевантности (BM25).
 
 **Scope:** `knowledge:read` (все тарифы)
 
-**Полный URL:** `GET https://platform.edgelab.su/api/v1/knowledge/search`
+**Полный URL:** `GET https://api.edgelab.su/api/v1/knowledge/search`
 
 ### Query-параметры
 
 | Параметр | Тип | По умолчанию | Описание |
 |---|---|---|---|
-| `q` | string | -- | Поисковый запрос (обязательный) |
-| `category` | string | -- | Фильтр по категории: `lessons`, `skills`, `usecases`, `live` |
+| `q` | string | -- | Поисковый запрос (обязательный, мин. 2 символа) |
+| `category` | string | -- | Фильтр по категории: `lesson`, `guide`, `usecase`, `live` |
 | `limit` | integer | 20 | Количество результатов (макс. 100) |
 | `offset` | integer | 0 | Смещение для пагинации |
 
@@ -51,7 +47,7 @@ Base URL: `https://platform.edgelab.su/api/v1`
 
 <CodeGroup>
 ```bash cURL
-curl "https://platform.edgelab.su/api/v1/knowledge/search?q=trading+bot&category=skills&limit=5" \
+curl "https://api.edgelab.su/api/v1/knowledge/search?q=VPS&category=live&limit=5" \
   -H "Authorization: Bearer edgelab_live_abc123"
 ```
 
@@ -61,9 +57,9 @@ import requests
 API_KEY = "edgelab_live_abc123"
 
 response = requests.get(
-    "https://platform.edgelab.su/api/v1/knowledge/search",
+    "https://api.edgelab.su/api/v1/knowledge/search",
     headers={"Authorization": f"Bearer {API_KEY}"},
-    params={"q": "trading bot", "category": "skills", "limit": 5}
+    params={"q": "VPS", "category": "live", "limit": 5}
 )
 
 print(response.json())
@@ -76,40 +72,40 @@ print(response.json())
 {
   "items": [
     {
-      "id": "kn_t1r2a3d4",
-      "title": "Создание торгового бота на Python",
-      "description": "Пошаговый гайд по разработке бота для автоматической торговли через API биржи",
-      "category": "skills",
-      "skill_type": "guide",
-      "author": "Даши",
-      "relevance_score": 0.94,
-      "created_at": "2025-02-10T08:00:00Z",
-      "updated_at": "2025-03-01T12:00:00Z"
-    },
-    {
-      "id": "kn_b5o6t7s8",
-      "title": "3 юзкейса ботов для DCA",
-      "description": "Как участники сообщества используют ботов для Dollar Cost Averaging",
-      "category": "usecases",
-      "related_skills": ["kn_t1r2a3d4", "kn_p9y0t1h2"],
-      "author": "Алексей К.",
-      "relevance_score": 0.81,
-      "created_at": "2025-02-20T10:00:00Z",
-      "updated_at": "2025-02-20T10:00:00Z"
+      "id": 19,
+      "slug": "live-s1-hetzner",
+      "title": "Покупка VPS на Hetzner",
+      "description": "Регистрация на Hetzner Cloud. Создание проекта и выбор сервера с помощью Perplexity – скриншоты + промпты.",
+      "cover_url": "",
+      "category": "live",
+      "content_type": "mixed",
+      "duration_minutes": 10,
+      "tariff_required": "edge",
+      "tags": [],
+      "created_at": "2026-03-23 17:09:49",
+      "updated_at": "2026-03-23 17:09:49",
+      "snippet": "...Я хочу поставить себе <mark>VPS</mark> на Hetzner в Хельсинки. Для Codex, Claude Code. Сервер для AI-агентов...",
+      "rank": -4.08
     }
   ],
-  "total": 8,
+  "total": 3,
   "limit": 5,
   "offset": 0,
-  "has_more": true
+  "has_more": false
 }
 ```
+
+<Info>
+**snippet** -- фрагмент текста с подсветкой совпадений через `<mark>` теги. Поиск идёт по всему содержимому материала, включая текст и транскрипцию видео.
+
+**rank** -- BM25 score. Чем ниже (ближе к -∞), тем выше релевантность. Результаты автоматически отсортированы по релевантности.
+</Info>
 
 ### Ошибки
 
 | HTTP код | Код ошибки | Когда |
 |---|---|---|
-| 400 | `bad_request` | Отсутствует обязательный параметр `q` |
+| 400 | `bad_request` | Отсутствует или слишком короткий параметр `q` |
 | 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
 | 403 | `forbidden` | Недостаточно scopes |
 | 429 | `rate_limit_exceeded` | Превышен лимит запросов |
@@ -118,18 +114,17 @@ print(response.json())
 
 ## GET /knowledge/list
 
-Список материалов с фильтрацией и сортировкой. В отличие от search, не требует поискового запроса.
+Список материалов с фильтрацией. В отличие от search, не требует поискового запроса. Результаты отсортированы по sort_order и дате создания.
 
 **Scope:** `knowledge:read` (все тарифы)
 
-**Полный URL:** `GET https://platform.edgelab.su/api/v1/knowledge/list`
+**Полный URL:** `GET https://api.edgelab.su/api/v1/knowledge/list`
 
 ### Query-параметры
 
 | Параметр | Тип | По умолчанию | Описание |
 |---|---|---|---|
-| `category` | string | -- | Фильтр: `lessons`, `skills`, `usecases`, `live` |
-| `sort` | string | `created_at_desc` | Сортировка: `created_at_desc`, `created_at_asc`, `title_asc`, `popularity` |
+| `category` | string | -- | Фильтр: `lesson`, `guide`, `usecase`, `live` |
 | `limit` | integer | 20 | Количество результатов (макс. 100) |
 | `offset` | integer | 0 | Смещение для пагинации |
 
@@ -137,7 +132,7 @@ print(response.json())
 
 <CodeGroup>
 ```bash cURL
-curl "https://platform.edgelab.su/api/v1/knowledge/list?category=live&sort=created_at_desc&limit=3" \
+curl "https://api.edgelab.su/api/v1/knowledge/list?category=live&limit=3" \
   -H "Authorization: Bearer edgelab_live_abc123"
 ```
 
@@ -147,9 +142,9 @@ import requests
 API_KEY = "edgelab_live_abc123"
 
 response = requests.get(
-    "https://platform.edgelab.su/api/v1/knowledge/list",
+    "https://api.edgelab.su/api/v1/knowledge/list",
     headers={"Authorization": f"Bearer {API_KEY}"},
-    params={"category": "live", "sort": "created_at_desc", "limit": 3}
+    params={"category": "live", "limit": 3}
 )
 
 print(response.json())
@@ -162,21 +157,21 @@ print(response.json())
 {
   "items": [
     {
-      "id": "kn_l1v2e3s4",
-      "title": "AMA: Как AI-агенты меняют крипто-трейдинг",
-      "description": "Запись эфира с разбором реальных кейсов автоматизации",
+      "id": 15,
+      "slug": "live-s1-intro",
+      "title": "Приветствие и структура воркшопа",
+      "description": "Формат воркшопа: 4 созвона за 7 дней. Цель – собрать работающего AI-агента к концу недели.",
+      "cover_url": "",
       "category": "live",
-      "duration_min": 62,
-      "key_takeaways": [
-        "AI-агенты снижают эмоциональные решения",
-        "DCA + бот = стабильная стратегия",
-        "Пример портфеля с $10/день"
-      ],
-      "author": "Даши",
-      "created_at": "2025-03-10T18:00:00Z"
+      "content_type": "mixed",
+      "duration_minutes": 12,
+      "tariff_required": "edge",
+      "tags": [],
+      "created_at": "2026-03-23 17:09:49",
+      "updated_at": "2026-03-23 17:09:49"
     }
   ],
-  "total": 14,
+  "total": 18,
   "limit": 3,
   "offset": 0,
   "has_more": true
@@ -196,69 +191,59 @@ print(response.json())
 
 ## GET /knowledge/{id}
 
-Полные детали материала, включая содержимое и специфичные поля по категории.
+Полные детали материала, включая содержимое, видео и вложения.
 
 **Scope:** `knowledge:read` (все тарифы)
 
-**Полный URL:** `GET https://platform.edgelab.su/api/v1/knowledge/{id}`
+**Полный URL:** `GET https://api.edgelab.su/api/v1/knowledge/{id}`
 
 ### Параметры пути
 
 | Параметр | Тип | Описание |
 |---|---|---|
-| `id` | string | Идентификатор материала |
+| `id` | integer | Идентификатор материала |
 
-### Пример ответа (lesson)
+### Пример ответа
 
 ```json
 {
-  "id": "kn_l1e2s3s4",
-  "title": "Настройка DCA-бота за 30 минут",
-  "description": "От регистрации на бирже до первой автоматической покупки",
-  "category": "lessons",
-  "content_markdown": "# Настройка DCA-бота\n\n## Шаг 1: Регистрация...",
-  "steps": [
-    {"step": 1, "title": "Регистрация на бирже", "duration_min": 5},
-    {"step": 2, "title": "Создание API-ключа", "duration_min": 3},
-    {"step": 3, "title": "Настройка бота", "duration_min": 10},
-    {"step": 4, "title": "Первый тестовый запуск", "duration_min": 12}
-  ],
-  "author": "Даши",
-  "has_files": true,
-  "created_at": "2025-01-15T08:00:00Z",
-  "updated_at": "2025-03-05T14:30:00Z"
+  "id": 19,
+  "slug": "live-s1-hetzner",
+  "title": "Покупка VPS на Hetzner",
+  "description": "Регистрация на Hetzner Cloud. Создание проекта и выбор сервера с помощью Perplexity – скриншоты + промпты.",
+  "cover_url": "",
+  "category": "live",
+  "content_type": "mixed",
+  "video_id": "cf3989d5-1773-4e61-a174-6db88206cd78",
+  "text_content": "<div>...</div>",
+  "transcript_text": null,
+  "duration_minutes": 10,
+  "tariff_required": "edge",
+  "tags": [],
+  "attachments": [],
+  "created_at": "2026-03-23 17:09:49",
+  "updated_at": "2026-03-23 17:09:49"
 }
 ```
 
-### Поля по категориям
+### Поля ответа
 
-Помимо общих полей (`id`, `title`, `description`, `category`, `author`, `content_markdown`, `has_files`, `created_at`, `updated_at`), каждая категория содержит специфичные поля:
-
-<Expandable title="lessons — уроки">
 | Поле | Тип | Описание |
 |---|---|---|
-| `steps` | array | Список шагов: `step`, `title`, `duration_min` |
-</Expandable>
-
-<Expandable title="skills — скиллы и гайды">
-| Поле | Тип | Описание |
-|---|---|---|
-| `skill_type` | string | Тип: `skill` или `guide` |
-</Expandable>
-
-<Expandable title="usecases — юзкейсы">
-| Поле | Тип | Описание |
-|---|---|---|
-| `related_skills` | array | Список ID связанных материалов |
-</Expandable>
-
-<Expandable title="live — записи эфиров">
-| Поле | Тип | Описание |
-|---|---|---|
-| `duration_min` | integer | Длительность в минутах |
-| `transcript` | string | Текстовая расшифровка эфира |
-| `key_takeaways` | array | Ключевые тезисы |
-</Expandable>
+| `id` | integer | Уникальный идентификатор |
+| `slug` | string | URL-friendly идентификатор |
+| `title` | string | Заголовок материала |
+| `description` | string | Краткое описание |
+| `cover_url` | string | URL обложки |
+| `category` | string | Категория: `lesson`, `guide`, `usecase`, `live` |
+| `content_type` | string | Тип контента: `mixed` (видео + текст), `text` |
+| `video_id` | string \| null | UUID видео на Kinescope CDN |
+| `text_content` | string \| null | HTML-содержимое материала |
+| `transcript_text` | string \| null | Транскрипция видео (если доступна) |
+| `duration_minutes` | integer \| null | Длительность в минутах |
+| `tariff_required` | string | Необходимый тариф: `edge`, `pro`, `vip` |
+| `tags` | array | Теги материала |
+| `attachments` | array | Прикреплённые файлы (`name`, `url`, `size_bytes`) |
 
 ### Ошибки
 
@@ -273,17 +258,17 @@ print(response.json())
 
 ## GET /knowledge/{id}/files
 
-Список файлов, прикреплённых к материалу. Файлы хранятся на GitHub -- API возвращает ссылки для скачивания.
+Список файлов, прикреплённых к материалу.
 
 **Scope:** `knowledge:read` (все тарифы)
 
-**Полный URL:** `GET https://platform.edgelab.su/api/v1/knowledge/{id}/files`
+**Полный URL:** `GET https://api.edgelab.su/api/v1/knowledge/{id}/files`
 
 ### Параметры пути
 
 | Параметр | Тип | Описание |
 |---|---|---|
-| `id` | string | Идентификатор материала |
+| `id` | integer | Идентификатор материала |
 
 ### Пример ответа
 
@@ -291,30 +276,18 @@ print(response.json())
 {
   "items": [
     {
-      "filename": "dca-bot-config.py",
+      "name": "config.py",
+      "url": "https://storage.example.com/files/config.py",
       "size_bytes": 4521,
-      "mime_type": "text/x-python",
-      "github_url": "https://github.com/edgelab-su/knowledge-files/blob/main/lessons/dca-bot/config.py",
-      "raw_url": "https://raw.githubusercontent.com/edgelab-su/knowledge-files/main/lessons/dca-bot/config.py"
-    },
-    {
-      "filename": "README.md",
-      "size_bytes": 1203,
-      "mime_type": "text/markdown",
-      "github_url": "https://github.com/edgelab-su/knowledge-files/blob/main/lessons/dca-bot/README.md",
-      "raw_url": "https://raw.githubusercontent.com/edgelab-su/knowledge-files/main/lessons/dca-bot/README.md"
+      "content_type": "text/x-python"
     }
   ],
-  "total": 2,
+  "total": 1,
   "limit": 20,
   "offset": 0,
   "has_more": false
 }
 ```
-
-<Warning>
-Файлы хранятся на GitHub, а не загружаются через API. API не проксирует файлы -- используйте `raw_url` для прямого скачивания с GitHub. Для просмотра в браузере -- `github_url`.
-</Warning>
 
 ### Ошибки
 
@@ -330,12 +303,11 @@ print(response.json())
 
 Рекомендуемый flow для AI-агента при работе с Knowledge API:
 
-1. **Поиск:** `GET /knowledge/search?q=нужная тема` -- найти релевантные материалы
-2. **Детали:** `GET /knowledge/{id}` -- получить полное содержимое
-3. **Спросить хозяина:** «Нашёл гайд по теме X. Хочешь, чтобы я скачал файлы?»
-4. **Файлы:** `GET /knowledge/{id}/files` -- получить ссылки на GitHub
-5. **Скачать:** загрузить файлы через `raw_url` для локальной работы
+1. **Поиск:** `GET /knowledge/search?q=нужная тема` -- найти релевантные материалы по всему содержимому
+2. **Детали:** `GET /knowledge/{id}` -- получить полное содержимое, видео и текст
+3. **Файлы:** `GET /knowledge/{id}/files` -- получить прикреплённые файлы
+4. **Использование snippet:** Поле `snippet` в результатах поиска показывает, где именно в тексте найдено совпадение
 
 <Tip>
-Если задача хозяина связана с конкретным навыком -- начните с `GET /knowledge/search?category=skills`. Для обучения -- `category=lessons`. Для вдохновения -- `category=usecases`.
+Поиск ищет по заголовку, описанию, полному тексту материала и транскрипции видео. Запрос "Tailscale" найдёт материал, даже если слово встречается только в тексте урока, а не в заголовке.
 </Tip>
