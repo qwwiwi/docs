@@ -22,6 +22,9 @@ Contributions -- механизм вклада в экосистему EdgeLab. 
 | Скилл | `skill` | Навык для AI-агента: промпт, пайплайн, интеграция |
 | Use Case | `usecase` | Практический кейс применения платформы |
 | Урок | `lesson` | Обучающий материал для сообщества |
+| Идея | `idea` | Предложение по улучшению платформы |
+| Баг | `bug` | Сообщение об ошибке |
+| Другое | `other` | Прочие contributions |
 
 ---
 
@@ -60,7 +63,7 @@ Contributions API особенно удобен, если:
 
 **Scope:** `contributions:write` (Pro, VIP)
 
-**Полный URL:** `POST https://platform.edgelab.su/api/v1/contributions/submit`
+**Полный URL:** `POST https://api.edgelab.su/api/v1/contributions/submit`
 
 ### Заголовки
 
@@ -76,7 +79,7 @@ Contributions API особенно удобен, если:
 </ParamField>
 
 <ParamField body="type" type="string" required>
-  Тип: `skill`, `usecase` или `lesson`
+  Тип: `skill`, `usecase`, `lesson`, `idea`, `bug` или `other`
 </ParamField>
 
 <ParamField body="description" type="string" required>
@@ -99,7 +102,7 @@ Contributions API особенно удобен, если:
 
 <CodeGroup>
 ```bash cURL
-curl -X POST https://platform.edgelab.su/api/v1/contributions/submit \
+curl -X POST https://api.edgelab.su/api/v1/contributions/submit \
   -H "Authorization: Bearer edgelab_live_abc123" \
   -H "Content-Type: application/json" \
   -d '{
@@ -117,18 +120,12 @@ curl -X POST https://platform.edgelab.su/api/v1/contributions/submit \
 
 ```json
 {
-  "id": "contrib_8f3a2b",
+  "id": 3,
   "title": "AI Research Scout",
-  "type": "skill",
+  "contribution_type": "skill",
   "status": "pending",
-  "description": "Скилл для автоматического мониторинга новых AI-публикаций на ArXiv",
-  "problem_solved": "Ручной мониторинг ArXiv занимает часы. Скилл автоматизирует поиск и фильтрацию",
-  "target_audience": "AI-разработчики и исследователи",
-  "github_url": "https://github.com/user/arxiv-scout-skill",
-  "author": {
-    "display_name": "researcher42"
-  },
-  "created_at": "2026-03-21T10:00:00Z"
+  "created_at": "2026-03-21T10:00:00Z",
+  "updated_at": "2026-03-21T10:00:00Z"
 }
 ```
 
@@ -154,7 +151,7 @@ curl -X POST https://platform.edgelab.su/api/v1/contributions/submit \
 
 **Scope:** `contributions:write` (Pro, VIP)
 
-**Полный URL:** `GET https://platform.edgelab.su/api/v1/contributions/my`
+**Полный URL:** `GET https://api.edgelab.su/api/v1/contributions/my`
 
 ### Заголовки
 
@@ -180,7 +177,7 @@ curl -X POST https://platform.edgelab.su/api/v1/contributions/submit \
 
 <CodeGroup>
 ```bash cURL
-curl "https://platform.edgelab.su/api/v1/contributions/my?status=approved&limit=10&offset=0" \
+curl "https://api.edgelab.su/api/v1/contributions/my?status=approved&limit=10&offset=0" \
   -H "Authorization: Bearer edgelab_live_abc123"
 ```
 </CodeGroup>
@@ -191,19 +188,16 @@ curl "https://platform.edgelab.su/api/v1/contributions/my?status=approved&limit=
 {
   "items": [
     {
-      "id": "contrib_8f3a2b",
-      "title": "AI Research Scout",
-      "type": "skill",
-      "status": "approved",
-      "description": "Скилл для автоматического мониторинга новых AI-публикаций на ArXiv",
-      "github_url": "https://github.com/user/arxiv-scout-skill",
-      "reviewer_comment": "Отличная работа, полезный скилл для сообщества",
-      "created_at": "2026-03-21T10:00:00Z",
-      "reviewed_at": "2026-03-22T14:30:00Z"
+      "id": 3,
+      "contribution_type": "idea",
+      "title": "Full test",
+      "status": "pending",
+      "created_at": "2026-03-23T23:10:42Z",
+      "updated_at": "2026-03-23T23:10:42Z"
     }
   ],
-  "total": 1,
-  "limit": 10,
+  "total": 3,
+  "limit": 20,
   "offset": 0,
   "has_more": false
 }
@@ -225,11 +219,11 @@ curl "https://platform.edgelab.su/api/v1/contributions/my?status=approved&limit=
 
 **Scope:** `contributions:write` (Pro, VIP)
 
-**Полный URL:** `GET https://platform.edgelab.su/api/v1/contributions/{id}`
+**Полный URL:** `GET https://api.edgelab.su/api/v1/contributions/{id}`
 
 ### Параметры пути
 
-<ParamField path="id" type="string" required>
+<ParamField path="id" type="integer" required>
   Идентификатор contribution
 </ParamField>
 
@@ -237,7 +231,7 @@ curl "https://platform.edgelab.su/api/v1/contributions/my?status=approved&limit=
 
 <CodeGroup>
 ```bash cURL
-curl https://platform.edgelab.su/api/v1/contributions/contrib_8f3a2b \
+curl https://api.edgelab.su/api/v1/contributions/3 \
   -H "Authorization: Bearer edgelab_live_abc123"
 ```
 </CodeGroup>
@@ -246,21 +240,12 @@ curl https://platform.edgelab.su/api/v1/contributions/contrib_8f3a2b \
 
 ```json
 {
-  "id": "contrib_8f3a2b",
-  "title": "AI Research Scout",
-  "type": "skill",
-  "status": "approved",
-  "description": "Скилл для автоматического мониторинга новых AI-публикаций на ArXiv",
-  "problem_solved": "Ручной мониторинг ArXiv занимает часы. Скилл автоматизирует поиск и фильтрацию",
-  "target_audience": "AI-разработчики и исследователи",
-  "github_url": "https://github.com/user/arxiv-scout-skill",
-  "author": {
-    "display_name": "researcher42"
-  },
-  "reviewer_comment": "Отличная работа, полезный скилл для сообщества",
-  "knowledge_url": "/knowledge/skills/arxiv-scout",
-  "created_at": "2026-03-21T10:00:00Z",
-  "reviewed_at": "2026-03-22T14:30:00Z"
+  "id": 3,
+  "contribution_type": "idea",
+  "title": "Full test",
+  "status": "pending",
+  "created_at": "2026-03-23T23:10:42Z",
+  "updated_at": "2026-03-23T23:10:42Z"
 }
 ```
 

@@ -52,7 +52,7 @@ description: "Отправка скиллов, use cases и уроков в эк
 <CodeGroup>
 
 ```bash curl
-curl -X POST https://platform.edgelab.su/api/v1/contributions/submit \
+curl -X POST https://api.edgelab.su/api/v1/contributions/submit \
   -H "Authorization: Bearer $EDGELAB_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -70,7 +70,7 @@ import requests
 import os
 
 response = requests.post(
-    "https://platform.edgelab.su/api/v1/contributions/submit",
+    "https://api.edgelab.su/api/v1/contributions/submit",
     headers={
         "Authorization": f"Bearer {os.environ['EDGELAB_API_KEY']}",
         "Content-Type": "application/json"
@@ -122,13 +122,13 @@ print(f"Статус: {result['status']}")
 <CodeGroup>
 
 ```bash curl
-curl -X GET https://platform.edgelab.su/api/v1/contributions/my \
+curl -X GET https://api.edgelab.su/api/v1/contributions/my \
   -H "Authorization: Bearer $EDGELAB_API_KEY"
 ```
 
 ```python Python
 response = requests.get(
-    "https://platform.edgelab.su/api/v1/contributions/my",
+    "https://api.edgelab.su/api/v1/contributions/my",
     headers={"Authorization": f"Bearer {os.environ['EDGELAB_API_KEY']}"}
 )
 
@@ -144,12 +144,12 @@ for contrib in response.json()["items"]:
 {
   "items": [
     {
-      "id": "ctrb_abc123",
+      "id": 3,
+      "contribution_type": "skill",
       "title": "Мониторинг цен CoinGecko",
-      "type": "skill",
       "status": "pending",
-      "created_at": "2025-03-15T10:00:00Z",
-      "reviewer_comment": null
+      "created_at": "2026-03-15T10:00:00Z",
+      "updated_at": "2026-03-15T10:00:00Z"
     }
   ],
   "total": 1,

@@ -10,7 +10,7 @@ Edge Lab объединяет участников через события: о
 <Note>
 Все endpoints используют авторизацию Bearer API-key: `Authorization: Bearer edgelab_live_...`
 
-Base URL: `https://platform.edgelab.su/api/v1`
+Base URL: `https://api.edgelab.su/api/v1`
 </Note>
 
 <Info>
@@ -35,7 +35,7 @@ Base URL: `https://platform.edgelab.su/api/v1`
 
 **Scope:** `events:read` (все тарифы)
 
-**Полный URL:** `GET https://platform.edgelab.su/api/v1/events`
+**Полный URL:** `GET https://api.edgelab.su/api/v1/events`
 
 ### Query-параметры
 
@@ -59,7 +59,7 @@ GET /api/v1/events?status=upcoming&event_type=online_live&limit=5
 {
   "items": [
     {
-      "id": "evt_w1o2r3k4",
+      "id": 1,
       "title": "Воркшоп: AI-агенты для трейдинга",
       "description": "Разбираем реальные кейсы автоматизации торговых стратегий",
       "event_type": "workshop",
@@ -76,10 +76,10 @@ GET /api/v1/events?status=upcoming&event_type=online_live&limit=5
       "registered_count": 47,
       "is_registered": false,
       "is_recurring": false,
-      "calendar_url": "https://platform.edgelab.su/api/v1/events/evt_w1o2r3k4/calendar"
+      "calendar_url": "https://api.edgelab.su/api/v1/events/1/calendar"
     },
     {
-      "id": "evt_a5m6a7s8",
+      "id": 2,
       "title": "AMA: Ответы на вопросы по DCA",
       "description": "Еженедельная AMA по стратегии $10/день",
       "event_type": "ama",
@@ -100,7 +100,7 @@ GET /api/v1/events?status=upcoming&event_type=online_live&limit=5
         "day": "thursday",
         "next_occurrence": "2025-04-03T19:00:00+03:00"
       },
-      "calendar_url": "https://platform.edgelab.su/api/v1/events/evt_a5m6a7s8/calendar"
+      "calendar_url": "https://api.edgelab.su/api/v1/events/2/calendar"
     }
   ],
   "total": 5,
@@ -127,19 +127,19 @@ GET /api/v1/events?status=upcoming&event_type=online_live&limit=5
 
 **Scope:** `events:read` (все тарифы)
 
-**Полный URL:** `GET https://platform.edgelab.su/api/v1/events/{id}`
+**Полный URL:** `GET https://api.edgelab.su/api/v1/events/{id}`
 
 ### Параметры пути
 
 | Параметр | Тип | Описание |
 |---|---|---|
-| `id` | string | Идентификатор события |
+| `id` | integer | Идентификатор события |
 
 ### Пример ответа
 
 ```json
 {
-  "id": "evt_w1o2r3k4",
+  "id": 1,
   "title": "Воркшоп: AI-агенты для трейдинга",
   "description": "Разбираем реальные кейсы автоматизации торговых стратегий",
   "full_description": "# AI-агенты для трейдинга\n\nНа воркшопе разберём:\n- Архитектуру торгового бота\n- Подключение к API биржи\n- Стратегии DCA и Grid\n- Мониторинг и алерты",
@@ -158,13 +158,13 @@ GET /api/v1/events?status=upcoming&event_type=online_live&limit=5
   "is_registered": false,
   "is_recurring": false,
   "knowledge_id": null,
-  "calendar_url": "https://platform.edgelab.su/api/v1/events/evt_w1o2r3k4/calendar",
+  "calendar_url": "https://api.edgelab.su/api/v1/events/1/calendar",
   "created_at": "2025-03-10T10:00:00Z"
 }
 ```
 
 <Info>
-Поле `knowledge_id` содержит ID записи в Knowledge API (`kn_...`), если после события была опубликована запись. Для прошедших событий это ссылка на материал категории `live`.
+Поле `knowledge_id` содержит integer ID записи в Knowledge API, если после события была опубликована запись. Для прошедших событий это ссылка на материал категории `live`.
 </Info>
 
 ### Ошибки
@@ -184,13 +184,13 @@ GET /api/v1/events?status=upcoming&event_type=online_live&limit=5
 
 **Scope:** `events:read` (все тарифы)
 
-**Полный URL:** `GET https://platform.edgelab.su/api/v1/events/{id}/calendar`
+**Полный URL:** `GET https://api.edgelab.su/api/v1/events/{id}/calendar`
 
 ### Параметры пути
 
 | Параметр | Тип | Описание |
 |---|---|---|
-| `id` | string | Идентификатор события |
+| `id` | integer | Идентификатор события |
 
 ### Query-параметры
 
@@ -236,7 +236,7 @@ Google Calendar интеграция -- одна из ключевых фич Ed
 
 **Scope:** `events:write` (Pro, VIP)
 
-**Полный URL:** `POST https://platform.edgelab.su/api/v1/events/propose`
+**Полный URL:** `POST https://api.edgelab.su/api/v1/events/propose`
 
 <Info>
 Предложение событий доступно только участникам с scope `events:write` (тарифы **Pro** и **VIP**). Участники на тарифе Edge могут просматривать события, но не предлагать новые.
@@ -259,7 +259,7 @@ Google Calendar интеграция -- одна из ключевых фич Ed
 
 <CodeGroup>
 ```bash cURL
-curl -X POST https://platform.edgelab.su/api/v1/events/propose \
+curl -X POST https://api.edgelab.su/api/v1/events/propose \
   -H "Authorization: Bearer edgelab_live_abc123" \
   -H "Content-Type: application/json" \
   -d '{
@@ -277,7 +277,7 @@ curl -X POST https://platform.edgelab.su/api/v1/events/propose \
 
 ```json
 {
-  "proposal_id": "prop_m1e2e3t4",
+  "proposal_id": 1,
   "status": "pending_review",
   "title": "Митап: Крипто и AI в Бангкоке",
   "proposed_date": "2025-04-05T17:00:00+07:00",
@@ -311,7 +311,7 @@ curl -X POST https://platform.edgelab.su/api/v1/events/propose \
 
 **Scope:** `events:write` (Pro, VIP)
 
-**Полный URL:** `GET https://platform.edgelab.su/api/v1/events/proposals`
+**Полный URL:** `GET https://api.edgelab.su/api/v1/events/proposals`
 
 ### Пример ответа
 
@@ -319,7 +319,7 @@ curl -X POST https://platform.edgelab.su/api/v1/events/propose \
 {
   "items": [
     {
-      "proposal_id": "prop_m1e2e3t4",
+      "proposal_id": 1,
       "title": "Митап: Крипто и AI в Бангкоке",
       "status": "pending_review",
       "proposed_date": "2025-04-05T17:00:00+07:00",
@@ -327,12 +327,12 @@ curl -X POST https://platform.edgelab.su/api/v1/events/propose \
       "reviewer_comment": null
     },
     {
-      "proposal_id": "prop_a1m2a3s4",
+      "proposal_id": 2,
       "title": "AMA: Вопросы новичков по крипте",
       "status": "approved",
       "proposed_date": "2025-03-28T19:00:00+03:00",
       "created_at": "2025-03-08T10:00:00Z",
-      "event_id": "evt_q9w8e7r6",
+      "event_id": 3,
       "reviewer_comment": "Отличная идея, запускаем!"
     }
   ],
@@ -383,7 +383,7 @@ curl -X POST https://platform.edgelab.su/api/v1/events/propose \
 
 После завершения события (особенно эфиров и AMA) запись публикуется в Knowledge API с категорией `live`:
 
-- `event.knowledge_id` → `kn_...` ID в Knowledge API
+- `event.knowledge_id` → integer ID в Knowledge API
 - Материал содержит `transcript` (расшифровку) и `key_takeaways` (ключевые тезисы)
 - Доступен через `GET /knowledge/{id}`
 

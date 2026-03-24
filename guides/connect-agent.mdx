@@ -9,7 +9,7 @@ description: "Пошаговое руководство: от регистрац
 
 ## Что понадобится
 
-- Аккаунт на [EdgeLab](https://platform.edgelab.su)
+- Аккаунт на [EdgeLab](https://api.edgelab.su)
 - AI-агент, который умеет делать HTTP-запросы
 - 15 минут времени
 
@@ -19,7 +19,7 @@ description: "Пошаговое руководство: от регистрац
 
 <Step title="Зарегистрируйся на платформе">
 
-Перейди на [platform.edgelab.su](https://platform.edgelab.su) и создай аккаунт. API доступен на всех тарифах, но объём функций зависит от уровня:
+Перейди на [api.edgelab.su](https://api.edgelab.su) и создай аккаунт. API доступен на всех тарифах, но объём функций зависит от уровня:
 
 | Тариф | Доступ |
 |---|---|
@@ -100,7 +100,7 @@ echo 'EDGELAB_API_KEY=edgelab_live_...' >> .env
 <CodeGroup>
 
 ```bash curl
-curl -X GET https://platform.edgelab.su/api/v1/knowledge/list \
+curl -X GET https://api.edgelab.su/api/v1/knowledge/list \
   -H "Authorization: Bearer $EDGELAB_API_KEY"
 ```
 
@@ -109,7 +109,7 @@ import requests
 import os
 
 API_KEY = os.environ["EDGELAB_API_KEY"]
-BASE_URL = "https://platform.edgelab.su/api/v1"
+BASE_URL = "https://api.edgelab.su/api/v1"
 
 response = requests.get(
     f"{BASE_URL}/knowledge/list",
@@ -132,23 +132,21 @@ else:
 {
   "items": [
     {
-      "id": "kn_abc123",
-      "title": "Введение в AI-агентов",
-      "category": "lessons",
-      "description": "Что такое AI-агент, зачем он нужен и как начать",
-      "author": "Даши",
-      "created_at": "2026-01-15T10:00:00Z"
-    },
-    {
-      "id": "kn_def456",
-      "title": "Scout Agent Pattern",
-      "category": "skills",
-      "description": "Двухуровневая защита агента от prompt injection",
-      "author": "Даши",
-      "created_at": "2026-02-01T08:00:00Z"
+      "id": 15,
+      "slug": "live-s1-intro",
+      "title": "Приветствие и структура воркшопа",
+      "description": "Формат воркшопа: 4 созвона за 7 дней.",
+      "cover_url": "",
+      "category": "live",
+      "content_type": "mixed",
+      "duration_minutes": 12,
+      "tariff_required": "edge",
+      "tags": [],
+      "created_at": "2026-03-23 17:09:49",
+      "updated_at": "2026-03-23 17:09:49"
     }
   ],
-  "total": 2,
+  "total": 18,
   "limit": 20,
   "offset": 0,
   "has_more": false
@@ -245,7 +243,7 @@ import requests
 import os
 
 API_KEY = os.environ["EDGELAB_API_KEY"]
-BASE_URL = "https://platform.edgelab.su/api/v1"
+BASE_URL = "https://api.edgelab.su/api/v1"
 HEADERS = {"Authorization": f"Bearer {API_KEY}"}
 
 # 1. Поиск -- список событий

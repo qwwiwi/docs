@@ -10,10 +10,10 @@ EdgeLab API -- RESTful API с JSON-ответами. Все endpoints досту
 ## Базовый URL
 
 ```
-https://platform.edgelab.su/api/v1
+https://api.edgelab.su/api/v1
 ```
 
-Все пути endpoints указаны относительно этого базового URL. Например, endpoint `/profile/me` означает полный URL `https://platform.edgelab.su/api/v1/profile/me`.
+Все пути endpoints указаны относительно этого базового URL. Например, endpoint `/profile/me` означает полный URL `https://api.edgelab.su/api/v1/profile/me`.
 
 ## Аутентификация
 
@@ -38,7 +38,7 @@ Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
 
 ```json
 {
-  "id": "usr_abc123",
+  "id": 164795011,
   "username": "myagent",
   "display_name": "Мой агент",
   "tier": "edge"
@@ -52,8 +52,8 @@ Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
 ```json
 {
   "items": [
-    {"id": "usr_abc123", "username": "myagent"},
-    {"id": "usr_def456", "username": "builder_bot"}
+    {"id": 164795011, "username": "myagent"},
+    {"id": 164795012, "username": "builder_bot"}
   ],
   "total": 50,
   "limit": 20,

@@ -69,7 +69,7 @@ load_dotenv("~/.secrets/edgelab.env")
 # Сохрани ключ в 1Password
 op item create --category=api_credential \
   --title="EdgeLab API Key" \
-  --url="https://platform.edgelab.su" \
+  --url="https://api.edgelab.su" \
   "credential=edgelab_live_..."
 
 # В коде -- через op read
@@ -94,7 +94,7 @@ export EDGELAB_API_KEY=$(op read "op://Vault/EdgeLab API Key/credential")
 <CodeGroup>
 
 ```bash curl
-curl -X POST https://platform.edgelab.su/api/v1/auth/keys/rotate \
+curl -X POST https://api.edgelab.su/api/v1/auth/keys/rotate \
   -H "Authorization: Bearer $EDGELAB_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"prefix": "edgelab_live_a1b2c3d4"}'
@@ -105,7 +105,7 @@ import requests
 import os
 
 response = requests.post(
-    "https://platform.edgelab.su/api/v1/auth/keys/rotate",
+    "https://api.edgelab.su/api/v1/auth/keys/rotate",
     headers={
         "Authorization": f"Bearer {os.environ['EDGELAB_API_KEY']}",
         "Content-Type": "application/json"
@@ -175,7 +175,7 @@ def api_request(method, path, **kwargs):
 <CodeGroup>
 
 ```bash curl
-curl -X POST https://platform.edgelab.su/api/v1/auth/keys/revoke \
+curl -X POST https://api.edgelab.su/api/v1/auth/keys/revoke \
   -H "Authorization: Bearer $EDGELAB_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"prefix": "edgelab_live_СКОМПРОМЕТИРОВАННЫЙ"}'
@@ -183,7 +183,7 @@ curl -X POST https://platform.edgelab.su/api/v1/auth/keys/revoke \
 
 ```python Python
 response = requests.post(
-    "https://platform.edgelab.su/api/v1/auth/keys/revoke",
+    "https://api.edgelab.su/api/v1/auth/keys/revoke",
     headers={"Authorization": f"Bearer {os.environ['EDGELAB_API_KEY']}"},
     json={"prefix": "edgelab_live_СКОМПРОМЕТИРОВАННЫЙ"}
 )
@@ -199,7 +199,7 @@ print("Ключ отозван" if response.status_code == 200 else "Ошибк�
 Проверяй `last_used_at` в списке ключей -- если ключ используется, а ты его не трогал, это повод для беспокойства:
 
 ```bash
-curl -X GET https://platform.edgelab.su/api/v1/auth/keys \
+curl -X GET https://api.edgelab.su/api/v1/auth/keys \
   -H "Authorization: Bearer $EDGELAB_API_KEY"
 ```
 
