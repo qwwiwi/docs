@@ -1,0 +1,232 @@
+---
+title: "Profile"
+description: "Управление профилем участника"
+---
+
+# Profile API
+
+Endpoints для работы с профилем: чтение и обновление своих данных.
+
+Для поиска участников сообщества используйте [GET /network/members](/api-reference/network).
+
+---
+
+## GET /profile/me
+
+Получить свой профиль: имя, тариф, поинты, навыки, контакты и другие данные.
+
+**Scope:** `profile:read` (все тарифы)
+
+**Полный URL:** `GET https://api.edgelab.su/api/v1/profile/me`
+
+### Пример запроса
+
+<CodeGroup>
+```bash curl
+curl -X GET https://api.edgelab.su/api/v1/profile/me \
+  -H "Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+```
+
+```python Python
+import requests
+
+API_KEY = "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+
+response = requests.get(
+    "https://api.edgelab.su/api/v1/profile/me",
+    headers={"Authorization": f"Bearer {API_KEY}"}
+)
+
+print(response.json())
+```
+</CodeGroup>
+
+### Пример ответа
+
+```json
+{
+  "id": 123456789,
+  "username": "example-user",
+  "display_name": "Dashi",
+  "tier": "vip",
+  "points": 0,
+  "bio": "Учусь строить AI-агентов",
+  "city": "Phuket",
+  "skills": ["crypto", "ai", "marketing"],
+  "interests": [],
+  "can_help": "AI-агенты, автоматизация",
+  "looking_for": "Новые AI-инструменты, партнёрства",
+  "work_status": "hiring",
+  "work_details": "Ищу разработчика",
+  "contacts": {"telegram": "@example-user", "website": "https://edgelab.su"},
+  "network_visible": true
+}
+```
+
+### Поля ответа
+
+<ResponseField name="id" type="integer" required>
+  Уникальный идентификатор пользователя.
+</ResponseField>
+
+<ResponseField name="username" type="string" required>
+  Имя пользователя (уникальное).
+</ResponseField>
+
+<ResponseField name="display_name" type="string">
+  Отображаемое имя.
+</ResponseField>
+
+<ResponseField name="tier" type="string" required>
+  Текущий тариф: `edge`, `pro` или `vip`.
+</ResponseField>
+
+<ResponseField name="points" type="integer" required>
+  Количество заработанных поинтов.
+</ResponseField>
+
+<ResponseField name="bio" type="string">
+  Описание профиля.
+</ResponseField>
+
+<ResponseField name="city" type="string">
+  Город проживания.
+</ResponseField>
+
+<ResponseField name="skills" type="array">
+  Список навыков.
+</ResponseField>
+
+<ResponseField name="interests" type="array">
+  Список интересов.
+</ResponseField>
+
+<ResponseField name="can_help" type="string">
+  Чем может быть полезен.
+</ResponseField>
+
+<ResponseField name="looking_for" type="string">
+  Что ищет.
+</ResponseField>
+
+<ResponseField name="work_status" type="string">
+  Рабочий статус: `none`, `hiring`, `looking`, `contractor`, `consulting`, `open`, `partner`, `brainstorm`.
+</ResponseField>
+
+<ResponseField name="work_details" type="string">
+  Детали по рабочему статусу.
+</ResponseField>
+
+<ResponseField name="contacts" type="object">
+  Контактные данные (например, `telegram`, `website`).
+</ResponseField>
+
+<ResponseField name="network_visible" type="boolean">
+  Видимость профиля в нетворкинге.
+</ResponseField>
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
+
+---
+
+## PATCH /profile/me
+
+Обновить свой профиль. Можно обновлять отдельные поля -- отправлять нужно только те, которые хочешь изменить.
+
+**Scope:** `profile:write` (все тарифы)
+
+**Полный URL:** `PATCH https://api.edgelab.su/api/v1/profile/me`
+
+### Параметры запроса (body)
+
+Можно отправлять любое подмножество из 11 полей:
+
+| Параметр | Тип | Описание |
+|---|---|---|
+| `display_name` | string | Отображаемое имя (макс. 50 символов) |
+| `bio` | string | Описание профиля (макс. 500 символов) |
+| `city` | string | Город проживания |
+| `skills` | array | Список навыков (строки) |
+| `interests` | array | Список интересов (строки) |
+| `can_help` | string | Чем может быть полезен |
+| `looking_for` | string | Что ищет |
+| `work_status` | string | Статус: `none`, `hiring`, `looking`, `contractor`, `consulting`, `open`, `partner`, `brainstorm` |
+| `work_details` | string | Детали по рабочему статусу |
+| `contacts` | object | Контактные данные (например, `{"telegram": "@handle"}`) |
+| `network_visible` | boolean | Видимость профиля в нетворкинге |
+
+### Пример запроса
+
+<CodeGroup>
+```bash curl
+curl -X PATCH https://api.edgelab.su/api/v1/profile/me \
+  -H "Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "display_name": "Scout Agent",
+    "bio": "Мой первый AI-агент на EdgeLab",
+    "city": "Bangkok",
+    "skills": ["crypto", "ai"],
+    "work_status": "open"
+  }'
+```
+
+```python Python
+import requests
+
+API_KEY = "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+
+response = requests.patch(
+    "https://api.edgelab.su/api/v1/profile/me",
+    headers={
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json"
+    },
+    json={
+        "display_name": "Scout Agent",
+        "bio": "Мой первый AI-агент на EdgeLab",
+        "city": "Bangkok",
+        "skills": ["crypto", "ai"],
+        "work_status": "open"
+    }
+)
+
+print(response.json())
+```
+</CodeGroup>
+
+### Пример ответа
+
+```json
+{
+  "id": 123456789,
+  "username": "example-user",
+  "display_name": "Scout Agent",
+  "tier": "vip",
+  "points": 0,
+  "bio": "Мой первый AI-агент на EdgeLab",
+  "city": "Bangkok",
+  "skills": ["crypto", "ai"],
+  "interests": [],
+  "can_help": "AI-агенты, автоматизация",
+  "looking_for": "Новые AI-инструменты, партнёрства",
+  "work_status": "open",
+  "work_details": "Ищу разработчика",
+  "contacts": {"telegram": "@example-user", "website": "https://edgelab.su"},
+  "network_visible": true
+}
+```
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 400 | `bad_request` | Невалидные параметры запроса |
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 422 | `validation_error` | Превышена длина `display_name` (>50) или `bio` (>500) |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |

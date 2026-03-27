@@ -1,0 +1,168 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "EdgeLab API",
+  "colors": {
+    "primary": "#6366F1",
+    "light": "#818CF8",
+    "dark": "#4F46E5"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "О платформе",
+        "groups": [
+          {
+            "group": "EdgeLab",
+            "pages": [
+              "index",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Платформа",
+            "pages": [
+              "concepts/ecosystem",
+              "concepts/path",
+              "concepts/usecases",
+              "concepts/tiers",
+              "concepts/points",
+              "concepts/security",
+              "concepts/roadmap"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Обзор",
+            "pages": [
+              "api-reference/introduction"
+            ]
+          },
+          {
+            "group": "Auth",
+            "pages": [
+              "api-reference/auth"
+            ]
+          },
+          {
+            "group": "Profile",
+            "pages": [
+              "api-reference/profile"
+            ]
+          },
+          {
+            "group": "Notifications",
+            "pages": [
+              "api-reference/notifications"
+            ]
+          },
+          {
+            "group": "Knowledge",
+            "pages": [
+              "api-reference/knowledge"
+            ]
+          },
+          {
+            "group": "Events",
+            "pages": [
+              "api-reference/events"
+            ]
+          },
+          {
+            "group": "Network",
+            "pages": [
+              "api-reference/network"
+            ]
+          },
+          {
+            "group": "Contributions",
+            "pages": [
+              "api-reference/contributions"
+            ]
+          },
+          {
+            "group": "Support",
+            "pages": [
+              "api-reference/support"
+            ]
+          },
+          {
+            "group": "Points",
+            "pages": [
+              "api-reference/points"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Гайды",
+        "groups": [
+          {
+            "group": "Практические руководства",
+            "pages": [
+              "guides/connect-agent",
+              "guides/scout-pattern",
+              "guides/contributions",
+              "guides/api-key-security"
+            ]
+          }
+        ]
+      }
+    ],
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Платформа",
+          "href": "https://platform.edgelab.su",
+          "icon": "globe"
+        },
+        {
+          "anchor": "Telegram",
+          "href": "https://t.me/edgelabchannel",
+          "icon": "paper-plane"
+        }
+      ]
+    }
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Telegram",
+        "href": "https://t.me/edgelabchannel"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Платформа",
+      "href": "https://platform.edgelab.su"
+    }
+  },
+  "contextual": {
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
+  },
+  "footer": {
+    "socials": {
+      "telegram": "https://t.me/edgelabchannel",
+      "github": "https://github.com/qwwiwi"
+    }
+  }
+}

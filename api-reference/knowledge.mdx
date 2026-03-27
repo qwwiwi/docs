@@ -1,0 +1,313 @@
+---
+title: "Knowledge"
+description: "Полнотекстовый поиск и доступ к учебным материалам: уроки, скиллы, юзкейсы, эфиры"
+---
+
+# Knowledge API
+
+База знаний Edge Lab содержит 4 категории материалов:
+
+| Категория | Описание |
+|---|---|
+| `lesson` | Пошаговые уроки с практикой |
+| `guide` | Гайды -- навыки и инструменты |
+| `usecase` | Реальные юзкейсы и примеры применения |
+| `live` | Записи эфиров, AMA, воркшопов |
+
+<Note>
+Все endpoints используют авторизацию Bearer API-key: `Authorization: Bearer edgelab_live_...`
+
+Base URL: `https://api.edgelab.su/api/v1`
+</Note>
+
+<Info>
+Все тарифы (Edge, Pro, VIP) имеют доступ к Knowledge API через scope `knowledge:read`. Ограничений по тарифу нет.
+</Info>
+
+---
+
+## GET /knowledge/search
+
+Полнотекстовый поиск по всем материалам базы знаний. Использует **SQLite FTS5** для поиска по заголовку, описанию, тексту и транскрипции видео. Результаты ранжируются по релевантности (BM25).
+
+**Scope:** `knowledge:read` (все тарифы)
+
+**Полный URL:** `GET https://api.edgelab.su/api/v1/knowledge/search`
+
+### Query-параметры
+
+| Параметр | Тип | По умолчанию | Описание |
+|---|---|---|---|
+| `q` | string | -- | Поисковый запрос (обязательный, мин. 2 символа) |
+| `category` | string | -- | Фильтр по категории: `lesson`, `guide`, `usecase`, `live` |
+| `limit` | integer | 20 | Количество результатов (макс. 100) |
+| `offset` | integer | 0 | Смещение для пагинации |
+
+### Пример запроса
+
+<CodeGroup>
+```bash cURL
+curl "https://api.edgelab.su/api/v1/knowledge/search?q=VPS&category=live&limit=5" \
+  -H "Authorization: Bearer edgelab_live_abc123"
+```
+
+```python Python
+import requests
+
+API_KEY = "edgelab_live_abc123"
+
+response = requests.get(
+    "https://api.edgelab.su/api/v1/knowledge/search",
+    headers={"Authorization": f"Bearer {API_KEY}"},
+    params={"q": "VPS", "category": "live", "limit": 5}
+)
+
+print(response.json())
+```
+</CodeGroup>
+
+### Пример ответа
+
+```json
+{
+  "items": [
+    {
+      "id": 19,
+      "slug": "live-s1-hetzner",
+      "title": "Покупка VPS на Hetzner",
+      "description": "Регистрация на Hetzner Cloud. Создание проекта и выбор сервера с помощью Perplexity – скриншоты + промпты.",
+      "cover_url": "",
+      "category": "live",
+      "content_type": "mixed",
+      "duration_minutes": 10,
+      "tariff_required": "edge",
+      "tags": [],
+      "created_at": "2026-03-23 17:09:49",
+      "updated_at": "2026-03-23 17:09:49",
+      "snippet": "...Я хочу поставить себе <mark>VPS</mark> на Hetzner в Хельсинки. Для Codex, Claude Code. Сервер для AI-агентов...",
+      "rank": -4.08
+    }
+  ],
+  "total": 3,
+  "limit": 5,
+  "offset": 0,
+  "has_more": false
+}
+```
+
+<Info>
+**snippet** -- фрагмент текста с подсветкой совпадений через `<mark>` теги. Поиск идёт по всему содержимому материала, включая текст и транскрипцию видео.
+
+**rank** -- BM25 score. Чем ниже (ближе к -∞), тем выше релевантность. Результаты автоматически отсортированы по релевантности.
+</Info>
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 400 | `bad_request` | Отсутствует или слишком короткий параметр `q` |
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 403 | `forbidden` | Недостаточно scopes |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
+
+---
+
+## GET /knowledge/list
+
+Список материалов с фильтрацией. В отличие от search, не требует поискового запроса. Результаты отсортированы по sort_order и дате создания.
+
+**Scope:** `knowledge:read` (все тарифы)
+
+**Полный URL:** `GET https://api.edgelab.su/api/v1/knowledge/list`
+
+### Query-параметры
+
+| Параметр | Тип | По умолчанию | Описание |
+|---|---|---|---|
+| `category` | string | -- | Фильтр: `lesson`, `guide`, `usecase`, `live` |
+| `limit` | integer | 20 | Количество результатов (макс. 100) |
+| `offset` | integer | 0 | Смещение для пагинации |
+
+### Пример запроса
+
+<CodeGroup>
+```bash cURL
+curl "https://api.edgelab.su/api/v1/knowledge/list?category=live&limit=3" \
+  -H "Authorization: Bearer edgelab_live_abc123"
+```
+
+```python Python
+import requests
+
+API_KEY = "edgelab_live_abc123"
+
+response = requests.get(
+    "https://api.edgelab.su/api/v1/knowledge/list",
+    headers={"Authorization": f"Bearer {API_KEY}"},
+    params={"category": "live", "limit": 3}
+)
+
+print(response.json())
+```
+</CodeGroup>
+
+### Пример ответа
+
+```json
+{
+  "items": [
+    {
+      "id": 15,
+      "slug": "live-s1-intro",
+      "title": "Приветствие и структура воркшопа",
+      "description": "Формат воркшопа: 4 созвона за 7 дней. Цель – собрать работающего AI-агента к концу недели.",
+      "cover_url": "",
+      "category": "live",
+      "content_type": "mixed",
+      "duration_minutes": 12,
+      "tariff_required": "edge",
+      "tags": [],
+      "created_at": "2026-03-23 17:09:49",
+      "updated_at": "2026-03-23 17:09:49"
+    }
+  ],
+  "total": 18,
+  "limit": 3,
+  "offset": 0,
+  "has_more": true
+}
+```
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 400 | `bad_request` | Невалидные параметры запроса |
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 403 | `forbidden` | Недостаточно scopes |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
+
+---
+
+## GET /knowledge/{id}
+
+Полные детали материала, включая содержимое, видео и вложения.
+
+**Scope:** `knowledge:read` (все тарифы)
+
+**Полный URL:** `GET https://api.edgelab.su/api/v1/knowledge/{id}`
+
+### Параметры пути
+
+| Параметр | Тип | Описание |
+|---|---|---|
+| `id` | integer | Идентификатор материала |
+
+### Пример ответа
+
+```json
+{
+  "id": 19,
+  "slug": "live-s1-hetzner",
+  "title": "Покупка VPS на Hetzner",
+  "description": "Регистрация на Hetzner Cloud. Создание проекта и выбор сервера с помощью Perplexity – скриншоты + промпты.",
+  "cover_url": "",
+  "category": "live",
+  "content_type": "mixed",
+  "video_id": "cf3989d5-1773-4e61-a174-6db88206cd78",
+  "text_content": "<div>...</div>",
+  "transcript_text": null,
+  "duration_minutes": 10,
+  "tariff_required": "edge",
+  "tags": [],
+  "attachments": [],
+  "created_at": "2026-03-23 17:09:49",
+  "updated_at": "2026-03-23 17:09:49"
+}
+```
+
+### Поля ответа
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `id` | integer | Уникальный идентификатор |
+| `slug` | string | URL-friendly идентификатор |
+| `title` | string | Заголовок материала |
+| `description` | string | Краткое описание |
+| `cover_url` | string | URL обложки |
+| `category` | string | Категория: `lesson`, `guide`, `usecase`, `live` |
+| `content_type` | string | Тип контента: `mixed` (видео + текст), `text` |
+| `video_id` | string \| null | UUID видео на Kinescope CDN |
+| `text_content` | string \| null | HTML-содержимое материала |
+| `transcript_text` | string \| null | Транскрипция видео (если доступна) |
+| `duration_minutes` | integer \| null | Длительность в минутах |
+| `tariff_required` | string | Необходимый тариф: `edge`, `pro`, `vip` |
+| `tags` | array | Теги материала |
+| `attachments` | array | Прикреплённые файлы (`name`, `url`, `size_bytes`) |
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 403 | `forbidden` | Недостаточно scopes |
+| 404 | `not_found` | Материал с указанным ID не найден |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
+
+---
+
+## GET /knowledge/{id}/files
+
+Список файлов, прикреплённых к материалу.
+
+**Scope:** `knowledge:read` (все тарифы)
+
+**Полный URL:** `GET https://api.edgelab.su/api/v1/knowledge/{id}/files`
+
+### Параметры пути
+
+| Параметр | Тип | Описание |
+|---|---|---|
+| `id` | integer | Идентификатор материала |
+
+### Пример ответа
+
+```json
+{
+  "items": [
+    {
+      "name": "config.py",
+      "url": "https://storage.example.com/files/config.py",
+      "size_bytes": 4521,
+      "content_type": "text/x-python"
+    }
+  ],
+  "total": 1,
+  "limit": 20,
+  "offset": 0,
+  "has_more": false
+}
+```
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 404 | `not_found` | Материал с указанным ID не найден |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
+
+---
+
+## Паттерн работы агента
+
+Рекомендуемый flow для AI-агента при работе с Knowledge API:
+
+1. **Поиск:** `GET /knowledge/search?q=нужная тема` -- найти релевантные материалы по всему содержимому
+2. **Детали:** `GET /knowledge/{id}` -- получить полное содержимое, видео и текст
+3. **Файлы:** `GET /knowledge/{id}/files` -- получить прикреплённые файлы
+4. **Использование snippet:** Поле `snippet` в результатах поиска показывает, где именно в тексте найдено совпадение
+
+<Tip>
+Поиск ищет по заголовку, описанию, полному тексту материала и транскрипции видео. Запрос "Tailscale" найдёт материал, даже если слово встречается только в тексте урока, а не в заголовке.
+</Tip>

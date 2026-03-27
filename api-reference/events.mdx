@@ -1,0 +1,403 @@
+---
+title: "Events"
+description: "События сообщества: эфиры, воркшопы, митапы, AMA и Google Calendar интеграция"
+---
+
+# Events API
+
+Edge Lab объединяет участников через события: онлайн-эфиры, AMA-сессии, воркшопы, митапы и оффлайн встречи. Каждое событие автоматически интегрируется с Google Calendar.
+
+<Note>
+Все endpoints используют авторизацию Bearer API-key: `Authorization: Bearer edgelab_live_...`
+
+Base URL: `https://api.edgelab.su/api/v1`
+</Note>
+
+<Info>
+**Доступность:** Чтение событий (`events:read`) доступно на **всех тарифах** (Edge, Pro, VIP). Предложение событий (`events:write`) -- только Pro и VIP.
+</Info>
+
+## Типы событий
+
+| Тип | Описание |
+|---|---|
+| `online_live` | Онлайн-эфир в Telegram/YouTube |
+| `ama` | AMA-сессия (вопрос-ответ) |
+| `workshop` | Воркшоп с практикой |
+| `meetup` | Тематический митап |
+| `offline` | Оффлайн встреча |
+
+---
+
+## GET /events
+
+Список событий с фильтрацией по статусу, типу и городу.
+
+**Scope:** `events:read` (все тарифы)
+
+**Полный URL:** `GET https://api.edgelab.su/api/v1/events`
+
+### Query-параметры
+
+| Параметр | Тип | По умолчанию | Описание |
+|---|---|---|---|
+| `status` | string | -- | Фильтр: `upcoming`, `live`, `past`, `cancelled` |
+| `event_type` | string | -- | Фильтр: `online_live`, `ama`, `workshop`, `meetup`, `offline` |
+| `city` | string | -- | Фильтр по городу для оффлайн событий: `moscow`, `bangkok` |
+| `limit` | integer | 20 | Количество результатов (макс. 100) |
+| `offset` | integer | 0 | Смещение для пагинации |
+
+### Пример запроса
+
+```
+GET /api/v1/events?status=upcoming&event_type=online_live&limit=5
+```
+
+### Пример ответа
+
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "title": "Воркшоп: AI-агенты для трейдинга",
+      "description": "Разбираем реальные кейсы автоматизации торговых стратегий",
+      "event_type": "workshop",
+      "status": "upcoming",
+      "starts_at": "2025-03-25T18:00:00+03:00",
+      "ends_at": "2025-03-25T20:00:00+03:00",
+      "duration_min": 120,
+      "speakers": [
+        {"name": "Ведущий", "role": "Ведущий"},
+        {"name": "Алексей К.", "role": "Спикер"}
+      ],
+      "location": "https://t.me/edgelab_live",
+      "max_participants": null,
+      "registered_count": 47,
+      "is_registered": false,
+      "is_recurring": false,
+      "calendar_url": "https://api.edgelab.su/api/v1/events/1/calendar"
+    },
+    {
+      "id": 2,
+      "title": "AMA: Ответы на вопросы по DCA",
+      "description": "Еженедельная AMA по стратегии $10/день",
+      "event_type": "ama",
+      "status": "upcoming",
+      "starts_at": "2025-03-27T19:00:00+03:00",
+      "ends_at": "2025-03-27T20:00:00+03:00",
+      "duration_min": 60,
+      "speakers": [
+        {"name": "Ведущий", "role": "Ведущий"}
+      ],
+      "location": "https://t.me/edgelab_live",
+      "max_participants": null,
+      "registered_count": 23,
+      "is_registered": true,
+      "is_recurring": true,
+      "recurrence": {
+        "frequency": "weekly",
+        "day": "thursday",
+        "next_occurrence": "2025-04-03T19:00:00+03:00"
+      },
+      "calendar_url": "https://api.edgelab.su/api/v1/events/2/calendar"
+    }
+  ],
+  "total": 5,
+  "limit": 5,
+  "offset": 0,
+  "has_more": false
+}
+```
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 400 | `bad_request` | Невалидные параметры запроса |
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 403 | `forbidden` | Недостаточно scopes |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
+
+---
+
+## GET /events/{id}
+
+Полные детали конкретного события.
+
+**Scope:** `events:read` (все тарифы)
+
+**Полный URL:** `GET https://api.edgelab.su/api/v1/events/{id}`
+
+### Параметры пути
+
+| Параметр | Тип | Описание |
+|---|---|---|
+| `id` | integer | Идентификатор события |
+
+### Пример ответа
+
+```json
+{
+  "id": 1,
+  "title": "Воркшоп: AI-агенты для трейдинга",
+  "description": "Разбираем реальные кейсы автоматизации торговых стратегий",
+  "full_description": "# AI-агенты для трейдинга\n\nНа воркшопе разберём:\n- Архитектуру торгового бота\n- Подключение к API биржи\n- Стратегии DCA и Grid\n- Мониторинг и алерты",
+  "event_type": "workshop",
+  "status": "upcoming",
+  "starts_at": "2025-03-25T18:00:00+03:00",
+  "ends_at": "2025-03-25T20:00:00+03:00",
+  "duration_min": 120,
+  "speakers": [
+    {"name": "Ведущий", "role": "Ведущий"},
+    {"name": "Алексей К.", "role": "Спикер"}
+  ],
+  "location": "https://t.me/edgelab_live",
+  "max_participants": null,
+  "registered_count": 47,
+  "is_registered": false,
+  "is_recurring": false,
+  "knowledge_id": null,
+  "calendar_url": "https://api.edgelab.su/api/v1/events/1/calendar",
+  "created_at": "2025-03-10T10:00:00Z"
+}
+```
+
+<Info>
+Поле `knowledge_id` содержит integer ID записи в Knowledge API, если после события была опубликована запись. Для прошедших событий это ссылка на материал категории `live`.
+</Info>
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 403 | `forbidden` | Недостаточно scopes |
+| 404 | `not_found` | Событие не найдено |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
+
+---
+
+## GET /events/{id}/calendar
+
+Получить ссылку для добавления события в Google Calendar или файл .ics для других календарей.
+
+**Scope:** `events:read` (все тарифы)
+
+**Полный URL:** `GET https://api.edgelab.su/api/v1/events/{id}/calendar`
+
+### Параметры пути
+
+| Параметр | Тип | Описание |
+|---|---|---|
+| `id` | integer | Идентификатор события |
+
+### Query-параметры
+
+| Параметр | Тип | По умолчанию | Описание |
+|---|---|---|---|
+| `format` | string | `google` | Формат: `google` (ссылка Google Calendar) или `ics` (файл .ics) |
+
+### Пример ответа (format=google)
+
+```json
+{
+  "calendar_url": "https://calendar.google.com/calendar/render?action=TEMPLATE&text=Воркшоп%3A+AI-агенты+для+трейдинга&dates=20250325T150000Z/20250325T170000Z&details=...",
+  "format": "google"
+}
+```
+
+### Пример ответа (format=ics)
+
+```json
+{
+  "ics_content": "BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:Воркшоп: AI-агенты для трейдинга\nDTSTART:20250325T150000Z\nDTEND:20250325T170000Z\n...\nEND:VEVENT\nEND:VCALENDAR",
+  "format": "ics"
+}
+```
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 404 | `not_found` | Событие не найдено |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
+
+<Tip>
+Google Calendar интеграция -- одна из ключевых фич Edge Lab. Агент может автоматически добавлять интересные события в календарь хозяина, предварительно спросив разрешение.
+</Tip>
+
+---
+
+## POST /events/propose
+
+Предложить новое событие для сообщества. Предложение проходит модерацию перед публикацией.
+
+**Scope:** `events:write` (Pro, VIP)
+
+**Полный URL:** `POST https://api.edgelab.su/api/v1/events/propose`
+
+<Info>
+Предложение событий доступно только участникам с scope `events:write` (тарифы **Pro** и **VIP**). Участники на тарифе Edge могут просматривать события, но не предлагать новые.
+</Info>
+
+### Параметры запроса (body)
+
+| Параметр | Тип | Обязательный | Описание |
+|---|---|---|---|
+| `title` | string | Да | Название события (макс. 150 символов) |
+| `description` | string | Да | Описание (макс. 2000 символов) |
+| `event_type` | string | Да | Тип: `online_live`, `ama`, `workshop`, `meetup`, `offline` |
+| `proposed_date` | string | Да | Предлагаемая дата и время (ISO 8601) |
+| `duration_min` | integer | Да | Предполагаемая длительность в минутах |
+| `city` | string | Нет | Город (обязателен для `meetup` и `offline`) |
+| `is_recurring` | boolean | Нет | Повторяющееся событие (по умолчанию `false`) |
+| `recurrence_frequency` | string | Нет | Частота: `weekly`, `biweekly`, `monthly` |
+
+### Пример запроса
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.edgelab.su/api/v1/events/propose \
+  -H "Authorization: Bearer edgelab_live_abc123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Митап: Крипто и AI в Бангкоке",
+    "description": "Неформальная встреча для обсуждения пересечения крипто и AI.",
+    "event_type": "meetup",
+    "proposed_date": "2025-04-05T17:00:00+07:00",
+    "duration_min": 120,
+    "city": "bangkok"
+  }'
+```
+</CodeGroup>
+
+### Пример ответа (201 Created)
+
+```json
+{
+  "proposal_id": 1,
+  "status": "pending_review",
+  "title": "Митап: Крипто и AI в Бангкоке",
+  "proposed_date": "2025-04-05T17:00:00+07:00",
+  "created_at": "2025-03-15T12:00:00Z"
+}
+```
+
+<Warning>
+Максимум 2 pending-предложения одновременно. При попытке отправить третье -- `429 Too Many Requests`. Дождитесь ответа модерации по предыдущим.
+</Warning>
+
+### Правило 7 дней
+
+Предлагаемая дата должна быть **не ранее 7 дней** от текущего момента. Это даёт время на модерацию, анонс и сбор регистраций.
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 400 | `bad_request` | Невалидные параметры запроса |
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 403 | `forbidden` | Тариф Edge -- scope `events:write` недоступен |
+| 422 | `validation_error` | Дата ранее 7 дней от сегодня, или пропущены обязательные поля |
+| 429 | `rate_limit_exceeded` | Уже есть 2 pending-предложения или превышен rate limit |
+
+---
+
+## GET /events/proposals
+
+Список собственных предложений на события и их статусы.
+
+**Scope:** `events:write` (Pro, VIP)
+
+**Полный URL:** `GET https://api.edgelab.su/api/v1/events/proposals`
+
+### Пример ответа
+
+```json
+{
+  "items": [
+    {
+      "proposal_id": 1,
+      "title": "Митап: Крипто и AI в Бангкоке",
+      "status": "pending_review",
+      "proposed_date": "2025-04-05T17:00:00+07:00",
+      "created_at": "2025-03-15T12:00:00Z",
+      "reviewer_comment": null
+    },
+    {
+      "proposal_id": 2,
+      "title": "AMA: Вопросы новичков по крипте",
+      "status": "approved",
+      "proposed_date": "2025-03-28T19:00:00+03:00",
+      "created_at": "2025-03-08T10:00:00Z",
+      "event_id": 3,
+      "reviewer_comment": "Отличная идея, запускаем!"
+    }
+  ],
+  "total": 2,
+  "limit": 20,
+  "offset": 0,
+  "has_more": false
+}
+```
+
+### Статусы предложений
+
+| Статус | Описание |
+|---|---|
+| `pending_review` | На модерации |
+| `approved` | Одобрено, создано событие (см. `event_id`) |
+| `rejected` | Отклонено (см. `reviewer_comment`) |
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
+
+---
+
+## Повторяющиеся события
+
+Для регулярных форматов (еженедельные AMA, ежемесячные митапы) поддерживается recurrence:
+
+```json
+{
+  "is_recurring": true,
+  "recurrence": {
+    "frequency": "weekly",
+    "day": "thursday",
+    "next_occurrence": "2025-04-03T19:00:00+03:00"
+  }
+}
+```
+
+Каждое конкретное вхождение -- отдельное событие в API с собственным `id` и счётчиком регистраций. Связь с серией -- через общий `series_id`.
+
+---
+
+## Связь с Knowledge API
+
+После завершения события (особенно эфиров и AMA) запись публикуется в Knowledge API с категорией `live`:
+
+- `event.knowledge_id` → integer ID в Knowledge API
+- Материал содержит `transcript` (расшифровку) и `key_takeaways` (ключевые тезисы)
+- Доступен через `GET /knowledge/{id}`
+
+<Tip>
+Паттерн для агента: после прошедшего события проверьте `knowledge_id` -- если запись уже опубликована, можно предложить хозяину посмотреть ключевые тезисы вместо полной записи.
+</Tip>
+
+---
+
+## Паттерн работы агента
+
+1. **Обзор:** `GET /events?status=upcoming` -- показать хозяину ближайшие события
+2. **Фильтр:** добавить `event_type=workshop` или `city=moscow` по запросу
+3. **Календарь:** `GET /events/{id}/calendar` -- добавить в Google Calendar хозяина
+4. **Предложение:** `POST /events/propose` -- помочь хозяину предложить своё событие (Pro/VIP)
+5. **Мониторинг:** `GET /events/proposals` -- проверять статус предложений
+6. **Записи:** для прошедших событий -- `knowledge_id` → Knowledge API

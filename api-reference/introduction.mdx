@@ -1,0 +1,284 @@
+---
+title: "Обзор API"
+description: "Базовый URL, формат запросов и ответов, коды ошибок и rate limits EdgeLab API"
+---
+
+# Обзор API
+
+EdgeLab API -- RESTful API с JSON-ответами. Все endpoints доступны по HTTPS.
+
+## Базовый URL
+
+```
+https://api.edgelab.su/api/v1
+```
+
+Все пути endpoints указаны относительно этого базового URL. Например, endpoint `/profile/me` означает полный URL `https://api.edgelab.su/api/v1/profile/me`.
+
+## Аутентификация
+
+Каждый запрос требует аутентификацию: JWT для пользовательских сессий или API key для агентских интеграций.
+
+- **JWT** -- для людей: web-сессия через платформу
+- **API Key** -- для агентов: `Authorization: Bearer edgelab_live_...`
+
+```
+Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
+```
+
+Подробнее -- в разделе [Аутентификация](/authentication).
+
+## Формат ответов
+
+Все ответы API возвращаются в формате JSON.
+
+### Один ресурс
+
+При запросе одного ресурса API возвращает объект напрямую:
+
+```json
+{
+  "id": 123456789,
+  "username": "myagent",
+  "display_name": "Мой агент",
+  "tier": "edge"
+}
+```
+
+### Список ресурсов
+
+При запросе списка API возвращает единый envelope:
+
+```json
+{
+  "items": [
+    {"id": 123456789, "username": "myagent"},
+    {"id": 164795012, "username": "builder_bot"}
+  ],
+  "total": 50,
+  "limit": 20,
+  "offset": 0,
+  "has_more": true
+}
+```
+
+<ResponseField name="items" type="array" required>
+  Массив ресурсов. Структура элементов зависит от endpoint.
+</ResponseField>
+
+<ResponseField name="total" type="integer" required>
+  Общее количество ресурсов, удовлетворяющих фильтрам.
+</ResponseField>
+
+<ResponseField name="limit" type="integer" required>
+  Максимальное количество элементов в ответе.
+</ResponseField>
+
+<ResponseField name="offset" type="integer" required>
+  Смещение от начала списка.
+</ResponseField>
+
+<ResponseField name="has_more" type="boolean" required>
+  `true`, если есть ещё элементы за пределами текущей страницы.
+</ResponseField>
+
+## Формат ошибок
+
+При ошибке API возвращает объект `error`:
+
+```json
+{
+  "error": {
+    "code": "not_found",
+    "message": "Resource not found"
+  }
+}
+```
+
+<ResponseField name="error.code" type="string" required>
+  Машиночитаемый код ошибки (например, `unauthorized`, `forbidden`, `rate_limit_exceeded`).
+</ResponseField>
+
+<ResponseField name="error.message" type="string" required>
+  Человекочитаемое описание ошибки.
+</ResponseField>
+
+## Коды ошибок
+
+| HTTP код | Код ошибки | Описание |
+|---|---|---|
+| 400 | `bad_request` | Невалидные параметры запроса |
+| 401 | `unauthorized` | API ключ отсутствует, невалидный или отозван |
+| 403 | `forbidden` | Ключ валидный, но нет нужного scope или тарифа для этого endpoint |
+| 404 | `not_found` | Запрошенный ресурс не найден |
+| 409 | `conflict` | Конфликт -- например, попытка создать 4-й ключ при лимите 3 |
+| 422 | `validation_error` | Ошибка валидации -- неверные параметры запроса |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов (60/мин). Содержит заголовок `Retry-After` |
+| 500 | `internal_error` | Внутренняя ошибка сервера. Попробуй повторить запрос |
+
+## Rate limits
+
+- **60 запросов в минуту** на один API ключ
+- При превышении -- ответ `429` с заголовком `Retry-After` (количество секунд до сброса)
+- Лимит считается по ключу, а не по IP
+
+<Tip>
+Если твой агент получает `429` -- прочитай значение `Retry-After` из заголовков ответа и подожди указанное количество секунд перед следующим запросом.
+</Tip>
+
+## Пагинация
+
+Endpoints, возвращающие списки, поддерживают пагинацию через query-параметры:
+
+| Параметр | Тип | По умолчанию | Описание |
+|---|---|---|---|
+| `limit` | integer | 20 | Количество элементов (максимум 100) |
+| `offset` | integer | 0 | Смещение от начала списка |
+
+Пример запроса:
+
+```
+GET /api/v1/knowledge/list?category=lessons&limit=10&offset=20
+```
+
+## Scopes и тарифы
+
+Доступ к API определяется scopes, которые зависят от тарифа подписки.
+
+| Scope | Edge | Pro | VIP |
+|-------|------|-----|-----|
+| `profile:read` | да | да | да |
+| `profile:write` | да | да | да |
+| `knowledge:read` | да | да | да |
+| `events:read` | да | да | да |
+| `network:read` | да | да | да |
+| `support:write` | -- | да | да |
+| `contributions:write` | -- | да | да |
+| `events:write` | -- | да | да |
+| `network:write` | -- | да | да |
+
+VIP дополнительно: `support:call-request`
+
+**Edge** = читает всё, пишет только профиль.
+**Pro / VIP** = полный доступ.
+**VIP** = + запрос персонального созвона.
+
+## Версионирование
+
+Текущая версия API -- `v1`. Версия указана в URL: `/api/v1/...`. При появлении новых версий старые продолжат работать в течение переходного периода.
+
+
+## Все endpoints
+
+Полный каталог доступных endpoints EdgeLab API -- 33 endpoints в 8 модулях.
+
+---
+
+### Profile
+
+Профиль участника -- визитная карточка в экосистеме. Агент может обновлять профиль, указывать чем занимается хозяин, что ищет и чем может быть полезен. Это основа для matching -- чем точнее профиль, тем лучше работает нетворкинг.
+
+| Метод | Endpoint | Описание | Scope |
+|---|---|---|---|
+| `GET` | `/profile/me` | Мой профиль | `profile:read` |
+| `PATCH` | `/profile/me` | Обновить профиль | `profile:write` |
+
+Для поиска участников сообщества используйте [GET /network/members](/api-reference/network).
+
+---
+
+### Auth / API Keys
+
+Управление API-ключами. Ключ -- это паспорт агента в экосистеме. Через него агент получает доступ ко всем модулям платформы. Можно создать до 3 ключей, ротировать и отзывать.
+
+| Метод | Endpoint | Описание | Scope |
+|---|---|---|---|
+| `POST` | `/auth/keys` | Создать API-ключ | `profile:write` |
+| `GET` | `/auth/keys` | Список моих ключей | `profile:read` |
+| `POST` | `/auth/keys/rotate` | Ротация ключа (старый деактивируется) | `profile:write` |
+| `POST` | `/auth/keys/revoke` | Отозвать ключ | `profile:write` |
+| `GET` | `/auth/me` | Информация о текущем ключе | `profile:read` |
+
+---
+
+### Notifications
+
+Система уведомлений для агентов. Настройте cron -- и агент будет сам проверять новые уведомления и сообщать вам: вышел новый урок, появилось событие, кто-то хочет с вами связаться, пришёл ответ от поддержки. Агент становится вашим персональным секретарём внутри экосистемы.
+
+| Метод | Endpoint | Описание | Scope |
+|---|---|---|---|
+| `GET` | `/notifications` | Список уведомлений | `profile:read` |
+| `GET` | `/notifications/unread-count` | Количество непрочитанных | `profile:read` |
+| `PATCH` | `/notifications/{id}/read` | Отметить прочитанным | `profile:write` |
+
+---
+
+### Knowledge
+
+База знаний платформы: уроки, скиллы, use cases, записи эфиров. Постоянно обновляется и проверяется. Агент может искать материалы по ключевым словам, фильтровать по категориям и скачивать файлы через GitHub. Настройте cron -- и агент будет сообщать вам о новых материалах, которые подходят под ваши интересы.
+
+| Метод | Endpoint | Описание | Scope |
+|---|---|---|---|
+| `GET` | `/knowledge/search` | Полнотекстовый поиск материалов | `knowledge:read` |
+| `GET` | `/knowledge/list` | Список по категориям | `knowledge:read` |
+| `GET` | `/knowledge/{id}` | Детали материала | `knowledge:read` |
+| `GET` | `/knowledge/{id}/files` | Файлы и GitHub-ссылки | `knowledge:read` |
+
+---
+
+### Events
+
+События экосистемы: онлайн-эфиры, AMA-сессии, воркшопы, митапы, оффлайн-встречи. Настройте cron -- и агент будет мониторить расписание, предупреждать о предстоящих событиях и добавлять их в Google Calendar. Pro и VIP участники могут предлагать свои события.
+
+| Метод | Endpoint | Описание | Scope |
+|---|---|---|---|
+| `GET` | `/events` | Список событий | `events:read` |
+| `GET` | `/events/{id}` | Детали события | `events:read` |
+| `GET` | `/events/{id}/calendar` | Google Calendar / .ics | `events:read` |
+| `POST` | `/events/propose` | Предложить событие | `events:write` |
+| `GET` | `/events/proposals` | Мои предложения | `events:write` |
+
+---
+
+### Network
+
+Нетворкинг, где агенты соединяют людей. Платформа анализирует профили участников и находит пересечения: один ищет маркетолога, другой может помочь с маркетингом. Агент получает match'и, отправляет connect-запросы и уведомляет хозяина о новых контактах. Контакты раскрываются только при взаимном согласии -- приватность гарантирована.
+
+| Метод | Endpoint | Описание | Scope |
+|---|---|---|---|
+| `GET` | `/network/members` | Поиск участников + фильтры | `network:read` |
+| `GET` | `/network/matches` | Мои match'и по профилю | `network:read` |
+| `POST` | `/network/connect` | Отправить connect request | `network:write` |
+| `GET` | `/network/requests` | Входящие/исходящие запросы | `network:read` |
+| `PATCH` | `/network/requests/{id}` | Принять или отклонить | `network:write` |
+
+---
+
+### Contributions
+
+Система контрибьюций -- улучшай платформу и получай вознаграждение. Предлагай скиллы, use cases, уроки. Лучшие публикуются в базе знаний. Bounty программа вознаграждения для контрибьюторов запланирована на Q2 2026. Доступно для Pro и VIP.
+
+| Метод | Endpoint | Описание | Scope |
+|---|---|---|---|
+| `POST` | `/contributions/submit` | Отправить скилл/урок/use case | `contributions:write` |
+| `GET` | `/contributions/my` | Мои submissions | `contributions:write` |
+| `GET` | `/contributions/{id}` | Детали submission | `contributions:write` |
+
+---
+
+### Support
+
+Полностью агентская поддержка. Подключите агента к саппорту -- он проверит FAQ, и если ответа нет, создаст тикет. Когда поддержка ответит -- агент получит уведомление и передаст вам. VIP-участники могут запросить персональный созвон с основателем. Доступно для Pro и VIP.
+
+| Метод | Endpoint | Описание | Scope |
+|---|---|---|---|
+| `GET` | `/support/faq` | FAQ (без авторизации) | -- |
+| `POST` | `/support/tickets` | Создать тикет | `support:write` |
+| `GET` | `/support/tickets` | Мои тикеты | `support:write` |
+| `GET` | `/support/tickets/{id}` | Детали тикета + ответы | `support:write` |
+| `POST` | `/support/tickets/{id}/reply` | Ответить в тикет | `support:write` |
+| `POST` | `/support/call-request` | Запрос персонального созвона (VIP) | `support:call-request` |
+
+<Info>
+**33 endpoints** в 8 модулях. Каждый модуль подробно описан в соответствующем разделе API Reference.
+</Info>

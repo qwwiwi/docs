@@ -1,0 +1,240 @@
+---
+title: "Notifications"
+description: "Получение и управление уведомлениями"
+---
+
+# Notifications API
+
+Endpoints для работы с уведомлениями: получение списка, отметка прочитанными, подсчёт непрочитанных.
+
+---
+
+## Типы уведомлений
+
+| Тип | Описание |
+|-----|----------|
+| `system` | Системное уведомление |
+| `contribution_approved` | Contribution одобрен и опубликован |
+| `contribution_rejected` | Contribution отклонён |
+| `points_earned` | Начислены поинты |
+| `network_request` | Новый запрос на подключение |
+| `network_accepted` | Запрос на подключение принят |
+| `support_ticket_answered` | Получен ответ на тикет в поддержку |
+| `support_call_updated` | Обновление статуса запроса на созвон (VIP) |
+| `event_reminder` | Напоминание о предстоящем событии |
+
+---
+
+## GET /notifications
+
+Получить список уведомлений текущего пользователя.
+
+**Scope:** `profile:read` (все тарифы)
+
+**Полный URL:** `GET https://api.edgelab.su/api/v1/notifications`
+
+### Query-параметры
+
+| Параметр | Тип | По умолчанию | Описание |
+|---|---|---|---|
+| `limit` | integer | 20 | Количество элементов (макс. 100) |
+| `offset` | integer | 0 | Смещение от начала списка |
+| `unread_only` | boolean | false | Показывать только непрочитанные |
+
+### Пример запроса
+
+<CodeGroup>
+```bash curl
+curl -X GET "https://api.edgelab.su/api/v1/notifications?unread_only=true&limit=20&offset=0" \
+  -H "Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+```
+
+```python Python
+import requests
+
+API_KEY = "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+
+response = requests.get(
+    "https://api.edgelab.su/api/v1/notifications",
+    headers={"Authorization": f"Bearer {API_KEY}"},
+    params={"unread_only": True, "limit": 20, "offset": 0}
+)
+
+print(response.json())
+```
+</CodeGroup>
+
+### Пример ответа
+
+```json
+{
+  "items": [
+    {
+      "id": 3,
+      "type": "system",
+      "title": "Touch test",
+      "body": "Testing clicks",
+      "cta_url": null,
+      "is_read": 1,
+      "created_at": "2026-03-21 14:31:22"
+    },
+    {
+      "id": 2,
+      "type": "points_earned",
+      "title": "Ты заработал поинты",
+      "body": "+10 поинтов за одобренный contribution.",
+      "cta_url": null,
+      "is_read": 0,
+      "created_at": "2026-03-15 10:00:01"
+    }
+  ],
+  "total": 3,
+  "limit": 20,
+  "offset": 0,
+  "has_more": false
+}
+```
+
+### Поля ответа
+
+<ResponseField name="items[].id" type="integer" required>
+  Уникальный идентификатор уведомления.
+</ResponseField>
+
+<ResponseField name="items[].type" type="string" required>
+  Тип уведомления (см. таблицу типов выше).
+</ResponseField>
+
+<ResponseField name="items[].title" type="string" required>
+  Заголовок уведомления.
+</ResponseField>
+
+<ResponseField name="items[].body" type="string" required>
+  Текст уведомления.
+</ResponseField>
+
+<ResponseField name="items[].cta_url" type="string">
+  Ссылка для перехода (может быть `null`).
+</ResponseField>
+
+<ResponseField name="items[].is_read" type="integer" required>
+  Прочитано ли уведомление: `0` -- нет, `1` -- да.
+</ResponseField>
+
+<ResponseField name="items[].created_at" type="string" required>
+  Дата и время создания.
+</ResponseField>
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 400 | `bad_request` | Невалидные параметры запроса |
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 403 | `forbidden` | Недостаточно scopes |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
+
+---
+
+## PATCH /notifications/{id}/read
+
+Отметить уведомление как прочитанное.
+
+**Scope:** `profile:write` (все тарифы)
+
+**Полный URL:** `PATCH https://api.edgelab.su/api/v1/notifications/{id}/read`
+
+### Параметры пути
+
+| Параметр | Тип | Описание |
+|---|---|---|
+| `id` | integer | Идентификатор уведомления |
+
+### Пример запроса
+
+<CodeGroup>
+```bash curl
+curl -X PATCH https://api.edgelab.su/api/v1/notifications/3/read \
+  -H "Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+```
+
+```python Python
+import requests
+
+API_KEY = "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+
+notification_id = 3
+
+response = requests.patch(
+    f"https://api.edgelab.su/api/v1/notifications/{notification_id}/read",
+    headers={"Authorization": f"Bearer {API_KEY}"}
+)
+
+print(response.json())
+```
+</CodeGroup>
+
+### Пример ответа
+
+```json
+{
+  "id": 3,
+  "is_read": 1,
+  "read_at": "2026-03-15T14:30:00Z"
+}
+```
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 404 | `not_found` | Уведомление с указанным id не найдено или принадлежит другому пользователю |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
+
+---
+
+## GET /notifications/unread-count
+
+Получить количество непрочитанных уведомлений. Удобно для отображения бейджа или периодической проверки.
+
+**Scope:** `profile:read` (все тарифы)
+
+**Полный URL:** `GET https://api.edgelab.su/api/v1/notifications/unread-count`
+
+### Пример запроса
+
+<CodeGroup>
+```bash curl
+curl -X GET https://api.edgelab.su/api/v1/notifications/unread-count \
+  -H "Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+```
+
+```python Python
+import requests
+
+API_KEY = "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+
+response = requests.get(
+    "https://api.edgelab.su/api/v1/notifications/unread-count",
+    headers={"Authorization": f"Bearer {API_KEY}"}
+)
+
+print(response.json())
+```
+</CodeGroup>
+
+### Пример ответа
+
+```json
+{
+  "unread_count": 5
+}
+```
+
+### Ошибки
+
+| HTTP код | Код ошибки | Когда |
+|---|---|---|
+| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
+| 429 | `rate_limit_exceeded` | Превышен лимит запросов |

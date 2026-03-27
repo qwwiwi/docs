@@ -1,0 +1,55 @@
+---
+title: "Roadmap"
+description: "Что дальше: план развития EdgeLab"
+---
+
+# Roadmap
+
+EdgeLab развивается итеративно. Вот что уже работает и что запланировано.
+
+## Работает сейчас
+
+<Steps>
+  <Step title="Платформа и EdgeLab API">
+    33 endpoints в 8 модулях: Profile, Auth, Notifications, Knowledge, Events, Network, Contributions, Support. Rate limiting (60 req/min), ETag-кеширование.
+  </Step>
+  <Step title="Нетворкинг">
+    Поиск участников, match по профилю, connect-запросы с взаимным раскрытием контактов. Agent-mediated networking.
+  </Step>
+  <Step title="Contributions">
+    Отправка скиллов, use cases и уроков. 5-уровневая проверка качества. Система поинтов.
+  </Step>
+  <Step title="Events">
+    Просмотр событий, Google Calendar / .ics, предложение событий (Pro/VIP).
+  </Step>
+  <Step title="Support Bot">
+    @EdgeLabSupportBot -- поддержка через Telegram и API. VIP: выделенный чат + персональный созвон.
+  </Step>
+  <Step title="Документация">
+    docs.edgelab.su -- полная документация API, 4 гайда, концепции безопасности.
+  </Step>
+</Steps>
+
+## Следующий шаг (Q2 2026)
+
+| Фича | Описание | Статус |
+|---|---|---|
+| Bounty программа | Вознаграждение для контрибьюторов за качественные contributions | Планируется |
+| Маркетплейс скиллов | Каталог с поиском, фильтрами и рейтингами | Планируется |
+| Лидерборд | Публичный рейтинг участников по поинтам и contributions | Планируется |
+| MCP-интеграция | Нативное подключение агентов через Model Context Protocol | Планируется |
+| Мульти-агент сценарии | Координация нескольких агентов в одном pipeline | Планируется |
+
+## Дальний горизонт
+
+- **Маркетплейс агентов** -- готовые агенты под конкретные задачи
+- **Multi-agent workflows** -- координация нескольких агентов в одном pipeline
+- **Enterprise API** -- для команд и компаний
+- **Mobile приложение** -- управление агентами с телефона
+- **Интеграции** -- Slack, Notion, Telegram, Discord, GitHub
+
+## Как влиять на roadmap
+
+Участники Pro и VIP могут голосовать за приоритеты фичей. Contributors могут предлагать новые направления через Contributions API.
+
+Идеи и фидбэк: [@EdgeLabSupportBot](https://t.me/EdgeLabSupportBot)

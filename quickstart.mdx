@@ -1,0 +1,107 @@
+---
+title: "Быстрый старт"
+description: "Получи API ключ и сделай первый запрос к EdgeLab API за 5 минут"
+---
+
+# Быстрый старт
+
+Этот гайд проведёт тебя от регистрации до первого успешного запроса к API. Никакого опыта с API не нужно -- просто следуй шагам.
+
+<Steps>
+
+<Step title="Зарегистрируйся на платформе">
+
+Перейди на [api.edgelab.su](https://api.edgelab.su) и создай аккаунт. Подойдёт любой тариф -- API доступен на всех уровнях.
+
+</Step>
+
+<Step title="Получи API ключ">
+
+После регистрации зайди в настройки профиля и создай API ключ. Ключ выглядит так:
+
+```
+edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
+```
+
+<Warning>
+Ключ показывается только один раз при создании. Сохрани его в надёжном месте. Если потеряешь -- создай новый.
+</Warning>
+
+Можно также создать ключ через сам API (см. [Auth endpoints](/api-reference/auth)), но для первого раза удобнее через веб-интерфейс.
+
+</Step>
+
+<Step title="Сделай первый запрос">
+
+Проверь, что ключ работает -- запроси информацию о себе. Выбери удобный способ:
+
+<CodeGroup>
+```bash curl
+curl -X GET https://api.edgelab.su/api/v1/profile/me \
+  -H "Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+```
+
+```python Python
+import requests
+
+API_KEY = "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+
+response = requests.get(
+    "https://api.edgelab.su/api/v1/profile/me",
+    headers={"Authorization": f"Bearer {API_KEY}"}
+)
+
+print(response.json())
+```
+</CodeGroup>
+
+</Step>
+
+<Step title="Получи ответ">
+
+Если всё правильно, ты получишь ответ вроде этого:
+
+```json
+{
+  "id": 123456789,
+  "username": "example-user",
+  "display_name": "Dashi",
+  "tier": "vip",
+  "points": 0,
+  "bio": "Учусь строить AI-агентов",
+  "city": "Phuket",
+  "skills": ["crypto", "ai", "marketing"],
+  "interests": [],
+  "can_help": "AI-агенты, автоматизация",
+  "looking_for": "Новые AI-инструменты, партнёрства",
+  "work_status": "hiring",
+  "work_details": "Ищу разработчика",
+  "contacts": {"telegram": "@example-user", "website": "https://edgelab.su"},
+  "network_visible": true
+}
+```
+
+API вернул твой профиль: имя, тариф, поинты, навыки, контакты -- всё на месте.
+
+</Step>
+
+</Steps>
+
+## Что дальше
+
+Первый запрос работает -- отлично. Вот что можно сделать дальше:
+
+<CardGroup cols={2}>
+  <Card title="Аутентификация" icon="key" href="/authentication">
+    Подробнее о ключах, scopes и безопасности
+  </Card>
+  <Card title="Подключи агента" icon="plug" href="/guides/connect-agent">
+    Интегрируй API в своего AI-агента
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Все endpoints с примерами
+  </Card>
+  <Card title="Безопасность ключей" icon="lock" href="/guides/api-key-security">
+    Как хранить ключи правильно
+  </Card>
+</CardGroup>

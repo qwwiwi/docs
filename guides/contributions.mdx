@@ -1,0 +1,189 @@
+---
+title: "Как стать контрибьютором"
+description: "Отправка скиллов, use cases и уроков в экосистему EdgeLab"
+---
+
+# Как стать контрибьютором
+
+Контрибьюторы -- участники, которые делают EdgeLab лучше: публикуют скиллы, use cases, уроки и практические pipeline. Лучшие работы попадают в базу знаний и становятся полезны всему сообществу.
+
+<Info>
+Контрибьютором может быть участник с тарифом **Pro** или **VIP**. На тарифе Edge эта функция недоступна.
+</Info>
+
+
+## Что такое хороший contribution
+
+Хороший contribution -- это не абстрактная идея, а реальный рабочий сценарий.
+
+Нам особенно интересны материалы от:
+- предпринимателей, которые автоматизировали рутину, продажи, контент или внутренние процессы
+- разработчиков, собравших агентов, интеграции и API workflow
+- маркетологов, SMM-специалистов, Instagram/Reels/YouTube creators
+- специалистов из любой ниши, которые нашли повторяемый способ усиливать свою работу с помощью AI
+
+Если твой workflow уже работает в жизни -- его можно оформить как contribution.
+
+## Что можно предложить
+
+| Тип | Описание | Пример |
+|---|---|---|
+| **Скилл** | Готовый скилл для AI-агента | Скилл для мониторинга цен через CoinGecko API |
+| **Use case** | Описание практического применения | Как агент автоматизирует утренний брифинг |
+| **Урок** | Образовательный материал | Пошаговый гайд по Agent-to-Agent коммуникации |
+
+## Требования к submission
+
+Перед отправкой убедись, что у тебя есть:
+
+- **Публичный GitHub-репозиторий** с кодом или материалом
+- **Описание проблемы** -- какую задачу решает твой contribution
+- **Целевая аудитория** -- для кого: новички, продвинутые, все
+- **Рабочий код** (для скиллов) с комментариями и README
+
+## Процесс
+
+<Steps>
+
+<Step title="Отправь submission">
+
+Через API или веб-интерфейс платформы:
+
+<CodeGroup>
+
+```bash curl
+curl -X POST https://api.edgelab.su/api/v1/contributions/submit \
+  -H "Authorization: Bearer $EDGELAB_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "skill",
+    "title": "Мониторинг цен CoinGecko",
+    "description": "Скилл для AI-агента: получение цен, графиков, алертов",
+    "github_url": "https://github.com/username/coingecko-skill",
+    "target_audience": "intermediate",
+    "problem_solved": "Нет простого способа получать крипто-цены и строить графики в AI-агенте"
+  }'
+```
+
+```python Python
+import requests
+import os
+
+response = requests.post(
+    "https://api.edgelab.su/api/v1/contributions/submit",
+    headers={
+        "Authorization": f"Bearer {os.environ['EDGELAB_API_KEY']}",
+        "Content-Type": "application/json"
+    },
+    json={
+        "type": "skill",
+        "title": "Мониторинг цен CoinGecko",
+        "description": "Скилл для AI-агента: получение цен, графиков, алертов",
+        "github_url": "https://github.com/username/coingecko-skill",
+        "target_audience": "intermediate",
+        "problem_solved": "Нет простого способа получать крипто-цены и строить графики в AI-агенте"
+    }
+)
+
+result = response.json()
+print(f"ID: {result['id']}")
+print(f"Статус: {result['status']}")
+```
+
+</CodeGroup>
+
+При отправке contribution получает статус **pending**.
+
+</Step>
+
+<Step title="Ревью администратором">
+
+Администратор рассматривает submission и принимает одно из решений:
+
+| Решение | Что происходит |
+|---|---|
+| **Approve** | Материал публикуется в Knowledge с атрибуцией автора |
+| **Reject** | Отклонён с указанием причины в комментарии |
+
+</Step>
+
+<Step title="Публикация">
+
+Одобренный contribution появляется в Knowledge. Другие участники могут его изучать, использовать в своих агентах и ссылаться на него.
+
+</Step>
+
+</Steps>
+
+## Проверка статуса
+
+Следи за своими contributions через API:
+
+<CodeGroup>
+
+```bash curl
+curl -X GET https://api.edgelab.su/api/v1/contributions/my \
+  -H "Authorization: Bearer $EDGELAB_API_KEY"
+```
+
+```python Python
+response = requests.get(
+    "https://api.edgelab.su/api/v1/contributions/my",
+    headers={"Authorization": f"Bearer {os.environ['EDGELAB_API_KEY']}"}
+)
+
+for contrib in response.json()["items"]:
+    print(f"{contrib['title']} -- {contrib['status']}")
+```
+
+</CodeGroup>
+
+Ответ:
+
+```json
+{
+  "items": [
+    {
+      "id": 3,
+      "contribution_type": "skill",
+      "title": "Мониторинг цен CoinGecko",
+      "status": "pending",
+      "created_at": "2026-03-15T10:00:00Z",
+      "updated_at": "2026-03-15T10:00:00Z"
+    }
+  ],
+  "total": 1,
+  "limit": 20,
+  "offset": 0,
+  "has_more": false
+}
+```
+
+## Вознаграждение
+
+EdgeLab запускает стартовую Bounty-программу для сильных контрибьюторов.
+
+На ближайшие **2 месяца** выделен фонд **5 000 USDT** для участников, которые будут приносить в сообщество реальные полезные use cases, skills, pipeline, уроки и практические материалы.
+
+Одобренные contributions также приносят поинты и усиливают позицию участника внутри экосистемы. Чем сильнее и полезнее твой вклад, тем выше шанс получить bounty.
+
+## Что делает contribution хорошим
+
+**Скилл:**
+- Решает конкретную задачу (не «делает всё и сразу»)
+- Чёткое описание: что делает, входы/выходы, зависимости
+- Рабочий код с комментариями
+
+**Use case:**
+- Описывает реальную задачу, которую агент решает
+- Показывает архитектуру: запрос → обработка → ответ
+- Указывает ограничения и edge cases
+
+**Урок:**
+- Пошаговая структура: от простого к сложному
+- Примеры кода, которые можно запустить
+- Целевая аудитория понятна из заголовка
+
+<Info>
+Одновременно может быть не более 2 активных pending contributions. Дождись ревью предыдущих, прежде чем отправлять новые.
+</Info>
