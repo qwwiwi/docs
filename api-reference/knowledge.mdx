@@ -1,18 +1,20 @@
 ---
 title: "Knowledge"
-description: "Полнотекстовый поиск и доступ к учебным материалам: уроки, скиллы, юзкейсы, эфиры"
+description: "Полнотекстовый поиск и доступ к учебным материалам: уроки, скиллы, юзкейсы, эфиры, воркшопы, гайды"
 ---
 
 # Knowledge API
 
-База знаний Edge Lab содержит 4 категории материалов:
+База знаний Edge Lab содержит 6 категорий материалов:
 
 | Категория | Описание |
 |---|---|
 | `lesson` | Пошаговые уроки с практикой |
-| `guide` | Гайды -- навыки и инструменты |
+| `skill` | Навыки и инструменты для AI-агентов |
 | `usecase` | Реальные юзкейсы и примеры применения |
-| `live` | Записи эфиров, AMA, воркшопов |
+| `live` | Записи эфиров, AMA-сессий |
+| `workshop` | Практические воркшопы с заданиями |
+| `guide` | Пошаговые гайды и руководства |
 
 <Note>
 Все endpoints используют авторизацию Bearer API-key: `Authorization: Bearer edgelab_live_...`
@@ -39,7 +41,7 @@ Base URL: `https://api.edgelab.su/api/v1`
 | Параметр | Тип | По умолчанию | Описание |
 |---|---|---|---|
 | `q` | string | -- | Поисковый запрос (обязательный, мин. 2 символа) |
-| `category` | string | -- | Фильтр по категории: `lesson`, `guide`, `usecase`, `live` |
+| `category` | string | -- | Фильтр по категории: `lesson`, `skill`, `usecase`, `live`, `workshop`, `guide` |
 | `limit` | integer | 20 | Количество результатов (макс. 100) |
 | `offset` | integer | 0 | Смещение для пагинации |
 
@@ -124,7 +126,7 @@ print(response.json())
 
 | Параметр | Тип | По умолчанию | Описание |
 |---|---|---|---|
-| `category` | string | -- | Фильтр: `lesson`, `guide`, `usecase`, `live` |
+| `category` | string | -- | Фильтр: `lesson`, `skill`, `usecase`, `live`, `workshop`, `guide` |
 | `limit` | integer | 20 | Количество результатов (макс. 100) |
 | `offset` | integer | 0 | Смещение для пагинации |
 
@@ -235,7 +237,7 @@ print(response.json())
 | `title` | string | Заголовок материала |
 | `description` | string | Краткое описание |
 | `cover_url` | string | URL обложки |
-| `category` | string | Категория: `lesson`, `guide`, `usecase`, `live` |
+| `category` | string | Категория: `lesson`, `skill`, `usecase`, `live`, `workshop`, `guide` |
 | `content_type` | string | Тип контента: `mixed` (видео + текст), `text` |
 | `video_id` | string \| null | UUID видео на Kinescope CDN |
 | `text_content` | string \| null | HTML-содержимое материала |
