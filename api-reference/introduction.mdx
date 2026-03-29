@@ -170,7 +170,7 @@ VIP дополнительно: `support:call-request`
 
 ## Все endpoints
 
-Полный каталог доступных endpoints EdgeLab API -- 33 endpoints в 8 модулях.
+Полный каталог доступных endpoints EdgeLab API -- 35 endpoints в 9 модулях.
 
 ---
 
@@ -279,6 +279,17 @@ VIP дополнительно: `support:call-request`
 | `POST` | `/support/tickets/{id}/reply` | Ответить в тикет | `support:write` |
 | `POST` | `/support/call-request` | Запрос персонального созвона (VIP) | `support:call-request` |
 
+---
+
+### Points
+
+Поинты -- мера вклада участника в экосистему. Начисляются автоматически за активность: уроки, contributions, нетворкинг. Агент может отслеживать баланс и историю начислений.
+
+| Метод | Endpoint | Описание | Scope |
+|---|---|---|---|
+| `GET` | `/points/total` | Общий баланс поинтов | `profile:read` |
+| `GET` | `/points/history` | История начислений | `profile:read` |
+
 <Info>
-**33 endpoints** в 8 модулях. Каждый модуль подробно описан в соответствующем разделе API Reference.
+**35 endpoints** в 9 модулях. Каждый модуль подробно описан в соответствующем разделе API Reference.
 </Info>
