@@ -1,263 +1,68 @@
 ---
 title: "Contributions"
-description: "API для отправки и управления contributions: скиллы, use cases, уроки"
+description: "MCP tools для contributions, review и favorites"
 ---
 
-# Contributions API
+# Contributions
 
-Contributions -- механизм вклада в экосистему EdgeLab. Участники на тарифах Pro и VIP могут предложить скилл, use case, урок или практический pipeline. Одобренные работы публикуются в базе знаний с указанием автора.
+Через contributions-слой агент может отправлять свой материал, следить за статусом и работать с полезными материалами в базе.
 
-Подробнее о процессе -- в гайде [Как делать contributions](/guides/contributions).
+## Доступные tools
 
-<Info>
-**Scope:** Для работы с Contributions API требуется scope `contributions:write`, доступный на тарифах **Pro** и **VIP**. Участники на тарифе Edge могут просматривать опубликованные contributions через Knowledge API.
-</Info>
+| Tool | Доступ | Что делает |
+|---|---|---|
+| `submit_contribution` | Pro/VIP | Отправляет contribution |
+| `list_my_contributions` | Pro/VIP | Возвращает свои contributions |
+| `get_contribution` | Pro/VIP | Возвращает детали contribution |
+| `write_review` | Edge+ | Пишет review к материалу |
+| `add_favorite` | Edge+ | Добавляет материал в избранное |
+| `remove_favorite` | Edge+ | Удаляет материал из избранного |
+| `list_favorites` | Edge+ | Возвращает список избранного |
 
----
+## `submit_contribution`
 
-## Типы contributions
+Основной tool для отправки материалов на рассмотрение.
 
-| Тип | Код | Описание |
-|-----|-----|----------|
-| Скилл | `skill` | Навык для AI-агента: промпт, пайплайн, интеграция |
-| Use Case | `usecase` | Практический кейс применения платформы |
-| Урок | `lesson` | Обучающий материал для сообщества |
-| Идея | `idea` | Предложение по улучшению платформы |
-| Баг | `bug` | Сообщение об ошибке |
-| Другое | `other` | Прочие contributions |
+Типично агент передаёт:
 
----
+- тип материала
+- заголовок
+- описание
+- полезность для аудитории
+- ссылку на исходный материал, если она нужна процессу
 
-## Процесс ревью
+Подходит для `skill`, `lesson`, `workshop`, `usecase` и других contribution-сценариев, которые поддерживает текущий backend.
 
-Упрощённая схема: администратор принимает решение «одобрено» или «отклонено» с обратной связью.
+## `list_my_contributions`
 
-| Статус | Описание |
-|--------|----------|
-| `pending` | Ожидает ревью администратора |
-| `approved` | Одобрен -- публикуется в Knowledge |
-| `rejected` | Отклонён с комментарием |
+Используй для трекинга статусов:
 
-При одобрении contribution автоматически публикуется в разделе Knowledge с указанием автора.
+- pending
+- approved
+- rejected
 
-<Info>
-**Вознаграждение:** сильные contributions участвуют в Bounty-программе EdgeLab. На ближайшие 2 месяца выделен стартовый фонд **5 000 USDT** для первых сильных контрибьюторов.
-</Info>
+Это удобнее, чем хранить локальный список вручную.
 
----
+## `get_contribution`
 
+Возвращает детальную карточку отправленного материала с метаданными и статусом.
 
-## Для кого особенно полезен Contributions API
+## `write_review`
 
-Contributions API особенно удобен, если:
-- ты работаешь через собственного AI-агента
-- у тебя уже есть автоматизированный pipeline подготовки материалов
-- ты хочешь программно загружать use cases, skills, уроки и workflow
-- твой агент может сам собирать, оформлять и отправлять contribution на ревью
+Позволяет оставить отзыв на материал. Это отдельный слой вокруг базы знаний и community feedback.
 
-Если у тебя уже есть рабочий AI-процесс, ты можешь встроить публикацию contributions прямо в свою систему.
+## `add_favorite`, `remove_favorite`, `list_favorites`
 
-## POST /contributions/submit
+Избранное полезно, если агент ведёт персональную библиотеку пользователя.
 
-Отправить новый contribution на ревью. Требуется ссылка на публичный GitHub-репозиторий с материалом.
+Хороший flow:
 
-**Scope:** `contributions:write` (Pro, VIP)
-
-**Полный URL:** `POST https://api.edgelab.su/api/v1/contributions/submit`
-
-### Заголовки
-
-| Заголовок | Значение |
-|-----------|----------|
-| `Authorization` | `Bearer edgelab_live_...` |
-| `Content-Type` | `application/json` |
-
-### Параметры запроса (body)
-
-<ParamField body="title" type="string" required>
-  Заголовок contribution (макс. 100 символов)
-</ParamField>
-
-<ParamField body="type" type="string" required>
-  Тип: `skill`, `usecase`, `lesson`, `idea`, `bug` или `other`
-</ParamField>
-
-<ParamField body="description" type="string" required>
-  Краткое описание (макс. 500 символов)
-</ParamField>
-
-<ParamField body="problem_solved" type="string" required>
-  Какую проблему решает contribution
-</ParamField>
-
-<ParamField body="target_audience" type="string" required>
-  Целевая аудитория: для кого предназначен материал
-</ParamField>
-
-<ParamField body="github_url" type="string" required>
-  Ссылка на публичный GitHub-репозиторий с исходным материалом. Принимаются только URL вида `https://github.com/...`
-</ParamField>
-
-### Пример запроса
-
-<CodeGroup>
-```bash cURL
-curl -X POST https://api.edgelab.su/api/v1/contributions/submit \
-  -H "Authorization: Bearer edgelab_live_abc123" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "AI Research Scout",
-    "type": "skill",
-    "description": "Скилл для автоматического мониторинга новых AI-публикаций на ArXiv",
-    "problem_solved": "Ручной мониторинг ArXiv занимает часы. Скилл автоматизирует поиск и фильтрацию",
-    "target_audience": "AI-разработчики и исследователи",
-    "github_url": "https://github.com/user/arxiv-scout-skill"
-  }'
-```
-</CodeGroup>
-
-### Пример ответа (201 Created)
-
-```json
-{
-  "id": 3,
-  "title": "AI Research Scout",
-  "contribution_type": "skill",
-  "status": "pending",
-  "created_at": "2026-03-21T10:00:00Z",
-  "updated_at": "2026-03-21T10:00:00Z"
-}
+```text
+search_knowledge -> add_favorite -> list_favorites
 ```
 
-### Ошибки
+или
 
-| HTTP код | Код ошибки | Когда |
-|----------|------------|-------|
-| 400 | `bad_request` | Невалидные параметры запроса |
-| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
-| 403 | `forbidden` | Тариф Edge -- scope `contributions:write` недоступен |
-| 422 | `validation_error` | Невалидные данные: пустой title, неизвестный type, невалидный github_url |
-| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
-
-<Warning>
-**GitHub-only:** Принимаются только ссылки вида `https://github.com/...`. Любые другие URL (GitLab, Bitbucket, произвольные домены) будут отклонены с ошибкой `422`.
-</Warning>
-
----
-
-## GET /contributions/my
-
-Получить список своих contributions с возможностью фильтрации по статусу.
-
-**Scope:** `contributions:write` (Pro, VIP)
-
-**Полный URL:** `GET https://api.edgelab.su/api/v1/contributions/my`
-
-### Заголовки
-
-| Заголовок | Значение |
-|-----------|----------|
-| `Authorization` | `Bearer edgelab_live_...` |
-
-### Query-параметры
-
-<ParamField query="status" type="string">
-  Фильтр по статусу: `pending`, `approved`, `rejected`
-</ParamField>
-
-<ParamField query="limit" type="integer" default="20">
-  Количество элементов (макс. 100)
-</ParamField>
-
-<ParamField query="offset" type="integer" default="0">
-  Смещение от начала списка
-</ParamField>
-
-### Пример запроса
-
-<CodeGroup>
-```bash cURL
-curl "https://api.edgelab.su/api/v1/contributions/my?status=approved&limit=10&offset=0" \
-  -H "Authorization: Bearer edgelab_live_abc123"
+```text
+submit_contribution -> list_my_contributions -> get_contribution
 ```
-</CodeGroup>
-
-### Пример ответа
-
-```json
-{
-  "items": [
-    {
-      "id": 3,
-      "contribution_type": "idea",
-      "title": "Full test",
-      "status": "pending",
-      "created_at": "2026-03-23T23:10:42Z",
-      "updated_at": "2026-03-23T23:10:42Z"
-    }
-  ],
-  "total": 3,
-  "limit": 20,
-  "offset": 0,
-  "has_more": false
-}
-```
-
-### Ошибки
-
-| HTTP код | Код ошибки | Когда |
-|----------|------------|-------|
-| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
-| 403 | `forbidden` | Тариф Edge -- scope `contributions:write` недоступен |
-| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
-
----
-
-## GET /contributions/{id}
-
-Получить детальную информацию о конкретном contribution.
-
-**Scope:** `contributions:write` (Pro, VIP)
-
-**Полный URL:** `GET https://api.edgelab.su/api/v1/contributions/{id}`
-
-### Параметры пути
-
-<ParamField path="id" type="integer" required>
-  Идентификатор contribution
-</ParamField>
-
-### Пример запроса
-
-<CodeGroup>
-```bash cURL
-curl https://api.edgelab.su/api/v1/contributions/3 \
-  -H "Authorization: Bearer edgelab_live_abc123"
-```
-</CodeGroup>
-
-### Пример ответа
-
-```json
-{
-  "id": 3,
-  "contribution_type": "idea",
-  "title": "Full test",
-  "status": "pending",
-  "created_at": "2026-03-23T23:10:42Z",
-  "updated_at": "2026-03-23T23:10:42Z"
-}
-```
-
-### Ошибки
-
-| HTTP код | Код ошибки | Когда |
-|----------|------------|-------|
-| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
-| 403 | `forbidden` | Тариф Edge -- scope `contributions:write` недоступен |
-| 404 | `not_found` | Contribution с указанным ID не найден |
-| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
-
-<Note>
-**GitHub-only:** Все contributions принимаются исключительно через ссылку на публичный GitHub-репозиторий (`https://github.com/...`). Это обеспечивает прозрачность, версионирование и возможность community-ревью. Ссылки на другие хостинги (GitLab, Bitbucket и т.д.) будут отклонены с ошибкой `422`.
-</Note>

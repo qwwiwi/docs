@@ -1,367 +1,279 @@
 ---
 title: "Подключение агента к EdgeLab"
-description: "Пошаговое руководство: от регистрации до первого запроса и основных паттернов работы с API"
+description: "Практический гайд по подключению агента к EdgeLab через MCP: конфиг, tools, cron-паттерны и уровни доступа"
 ---
 
 # Подключение агента к EdgeLab
 
-Твой AI-агент может самостоятельно работать с EdgeLab API: читать материалы, находить участников, следить за событиями и делать contributions. Этот гайд показывает, как подключить агента за 15 минут.
+Если коротко: твой агент не ходит в REST endpoint'ы. Он подключается к MCP-серверу `https://mcp.edgelab.su/mcp` и вызывает tools.
 
 ## Что понадобится
 
-- Аккаунт на [EdgeLab](https://api.edgelab.su)
-- AI-агент, который умеет делать HTTP-запросы
-- 15 минут времени
+- MCP-клиент: Claude Desktop, Cursor, Windsurf или свой runtime
+- Ключ `el_live_...`, если нужны личные tools
+- Telegram-бот [@InvestorEdgeLabbot](https://t.me/InvestorEdgeLabbot), если нужен personal-доступ
+
+## Схема доступа
+
+| Уровень | Нужен ключ | Что получает агент |
+|---|:---:|---|
+| Free | -- | Публичные guides и FAQ |
+| Edge | + | Профиль, прогресс, achievements, points, billing, support, notifications, events, network, contributions, referrals |
+| Pro | + | Всё из Edge + `events:write`, usecases, priority support |
+| VIP | + | Всё из Pro без referrals, но с большими лимитами и early access |
+
+<Warning>
+VIP сейчас описан как модель доступа, но сами планы выключены. Не обещай пользователям, что его можно оформить прямо сейчас.
+</Warning>
 
 ## Шаг за шагом
 
 <Steps>
 
-<Step title="Зарегистрируйся на платформе">
+<Step title="Получи ключ, если нужен личный контур">
 
-Перейди на [api.edgelab.su](https://api.edgelab.su) и создай аккаунт. API доступен на всех тарифах, но объём функций зависит от уровня:
+Ключ выдаёт бот [@InvestorEdgeLabbot](https://t.me/InvestorEdgeLabbot). Формат всегда такой:
 
-| Тариф | Доступ |
-|---|---|
-| **Edge** | Профиль, знания, события (чтение), участники (чтение) |
-| **Pro** | Всё из Edge + поддержка, contributions, connect-запросы, предложение событий |
-| **VIP** | Всё из Pro + персональный созвон с основателем |
+```text
+el_live_1a8c25f8b7165604
+```
+
+Если тебе нужен только публичный поиск по гайдам, этот шаг можно пропустить.
 
 </Step>
 
-<Step title="Получи API-ключ">
-
-Зайди в **Настройки → API-ключ** и нажми «Создать ключ». Ключ выглядит так:
-
-```
-edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
-```
-
-<Warning>
-Ключ показывается только один раз при создании. Сохрани его сразу. Если потеряешь -- придётся создавать новый.
-</Warning>
-
-</Step>
-
-<Step title="Добавь ключ в конфиг агента">
-
-Ключ передаётся в заголовке `Authorization: Bearer ...` каждого запроса. Вот как добавить его в разные системы:
+<Step title="Добавь MCP-конфиг">
 
 <CodeGroup>
-
-```bash OpenClaw (переменная окружения)
-# В ~/.zshrc или ~/.bashrc
-export EDGELAB_API_KEY="edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
-
-# Или в .env файле проекта
-echo 'EDGELAB_API_KEY=edgelab_live_...' >> .env
-```
-
-```json Claude Code (MCP config)
+```json Claude Desktop
 {
   "mcpServers": {
     "edgelab": {
-      "command": "npx",
-      "args": ["edgelab-mcp"],
-      "env": {
-        "EDGELAB_API_KEY": "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+      "url": "https://mcp.edgelab.su/mcp",
+      "headers": {
+        "Authorization": "Bearer el_live_1a8c25f8b7165604"
       }
     }
   }
 }
 ```
 
-```json Cursor (.cursor/mcp.json)
+```json Cursor
 {
   "mcpServers": {
     "edgelab": {
-      "command": "npx",
-      "args": ["edgelab-mcp"],
-      "env": {
-        "EDGELAB_API_KEY": "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+      "url": "https://mcp.edgelab.su/mcp",
+      "headers": {
+        "x-api-key": "el_live_1a8c25f8b7165604"
       }
     }
   }
 }
 ```
 
+```json Windsurf
+{
+  "mcpServers": {
+    "edgelab": {
+      "url": "https://mcp.edgelab.su/mcp",
+      "headers": {
+        "Authorization": "Bearer el_live_1a8c25f8b7165604"
+      }
+    }
+  }
+}
+```
 </CodeGroup>
-
-<Tip>
-Подробнее о безопасном хранении ключей -- в гайде [Безопасность API-ключей](/guides/api-key-security).
-</Tip>
 
 </Step>
 
-<Step title="Проверь подключение: первый запрос">
+<Step title="Проверь public tools">
 
-Сделай `GET /knowledge/list` -- если ответ пришёл, всё работает:
-
-<CodeGroup>
-
-```bash curl
-curl -X GET https://api.edgelab.su/api/v1/knowledge/list \
-  -H "Authorization: Bearer $EDGELAB_API_KEY"
-```
-
-```python Python
-import requests
-import os
-
-API_KEY = os.environ["EDGELAB_API_KEY"]
-BASE_URL = "https://api.edgelab.su/api/v1"
-
-response = requests.get(
-    f"{BASE_URL}/knowledge/list",
-    headers={"Authorization": f"Bearer {API_KEY}"}
-)
-
-data = response.json()
-if response.status_code == 200:
-    print(f"Статус: OK")
-    print(f"Материалов: {len(data['items'])}")
-else:
-    print(f"Ошибка: {data['error']['message']}")
-```
-
-</CodeGroup>
-
-Успешный ответ:
+Самый простой smoke test:
 
 ```json
 {
-  "items": [
-    {
-      "id": 15,
-      "slug": "live-s1-intro",
-      "title": "Приветствие и структура воркшопа",
-      "description": "Формат воркшопа: 4 созвона за 7 дней.",
-      "cover_url": "",
-      "category": "live",
-      "content_type": "mixed",
-      "duration_minutes": 12,
-      "tariff_required": "edge",
-      "tags": [],
-      "created_at": "2026-03-23 17:09:49",
-      "updated_at": "2026-03-23 17:09:49"
-    }
-  ],
-  "total": 18,
-  "limit": 20,
-  "offset": 0,
-  "has_more": false
+  "jsonrpc": "2.0",
+  "id": "health-1",
+  "method": "tools/call",
+  "params": {
+    "name": "health",
+    "arguments": {}
+  }
 }
 ```
 
-Если получил `401` -- проверь ключ. Если `403` -- возможно, endpoint недоступен на твоём тарифе.
+После этого попробуй:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "list-1",
+  "method": "tools/call",
+  "params": {
+    "name": "list_knowledge",
+    "arguments": {
+      "category": "guide",
+      "page": 1,
+      "per_page": 3
+    }
+  }
+}
+```
+
+</Step>
+
+<Step title="Проверь personal tools">
+
+Когда ключ добавлен, вызови что-то из личного контура:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "profile-1",
+  "method": "tools/call",
+  "params": {
+    "name": "get_user_profile",
+    "arguments": {}
+  }
+}
+```
+
+Или:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "dash-1",
+  "method": "tools/call",
+  "params": {
+    "name": "get_dashboard",
+    "arguments": {}
+  }
+}
+```
 
 </Step>
 
 </Steps>
 
-## Основные endpoints для агента
+## Полезные группы tools
 
-После подключения агент может использовать пять групп endpoints:
+### Knowledge
 
-### Knowledge -- читать материалы
-
-```bash
-# Список всех материалов
-GET /knowledge/list
-
-# Детали конкретного материала
-GET /knowledge/{id}
-
-# Поиск по ключевым словам
-GET /knowledge/search?q=scout+pattern
+```text
+search_knowledge
+get_knowledge
+list_knowledge
+list_categories
+get_knowledge_children
+list_recent_knowledge
+get_sections
 ```
 
-### Events -- смотреть события
+### Profile и progress
 
-```bash
-# Ближайшие события
-GET /events
-
-# Детали события
-GET /events/{id}
+```text
+get_user_profile
+get_full_profile
+update_profile
+link_telegram
+track_progress
+get_progress
+get_progress_history
 ```
 
-### Network -- искать участников
+### Events
 
-```bash
-# Список участников
-GET /network/members
-
-# Запрос на нетворкинг (Pro+)
-POST /network/connect
+```text
+list_events
+get_event
+get_event_calendar
+rsvp_event
+cancel_rsvp
+propose_event
+list_proposals
 ```
 
-### Support -- создать тикет
+### Network
 
-```bash
-# Создать тикет
-POST /support/tickets
-
-# Посмотреть свои тикеты
-GET /support/tickets
+```text
+list_members
+search_members
+get_matches
+list_connect_requests
+send_connect_request
+respond_connect_request
 ```
 
-### Contributions -- делать вклад
+### Support и notifications
 
-```bash
-# Отправить contribution (Pro+)
-POST /contributions/submit
-
-# Посмотреть свои contributions
-GET /contributions/my
+```text
+create_ticket
+list_tickets
+get_ticket
+send_ticket_message
+list_notifications
+mark_notification_read
+get_unread_count
 ```
 
-## Паттерн работы: поиск → детали → действие
+## Рабочий паттерн агента
 
-Большинство задач агента следуют одному паттерну:
+Обычно flow такой:
 
-<Steps>
+1. Агент ищет данные через `list_*` или `search_*`
+2. Потом добирает детали через `get_*`
+3. После этого делает действие: `rsvp_event`, `update_profile`, `create_ticket`, `submit_contribution`
 
-<Step title="Поиск">
-Агент ищет нужные данные через `list` или `search` endpoint.
-</Step>
+Это надёжнее, чем пытаться «угадывать» id или контекст.
 
-<Step title="Детали">
-Получает подробности по конкретному `id`.
-</Step>
+## Cron и фоновая автоматизация
 
-<Step title="Действие">
-Выполняет действие: подключение, отправка.
-</Step>
+Если у тебя агент работает по расписанию, ориентируйся на MCP tools, а не на HTTP endpoint'ы.
 
-</Steps>
+| Частота | Tool | Зачем |
+|---|---|---|
+| Каждые 10 минут | `get_unread_count` | Быстро понять, появились ли новые уведомления |
+| Каждое утро | `list_recent_knowledge` | Забрать свежие материалы |
+| Каждое утро | `list_events` | Проверить ближайшие события |
+| После завершения урока | `track_progress` | Обновить прогресс |
+| 1-2 раза в день | `get_matches` | Проверить новые совпадения в нетворке |
 
-Пример -- найти и посмотреть детали события:
+Пример логики cron:
 
-```python
-import requests
-import os
-
-API_KEY = os.environ["EDGELAB_API_KEY"]
-BASE_URL = "https://api.edgelab.su/api/v1"
-HEADERS = {"Authorization": f"Bearer {API_KEY}"}
-
-# 1. Поиск -- список событий
-response = requests.get(f"{BASE_URL}/events", headers=HEADERS)
-events = response.json()
-
-# 2. Детали -- первое предстоящее событие
-event = events["items"][0]
-event_details = requests.get(
-    f"{BASE_URL}/events/{event['id']}", headers=HEADERS
-).json()
-print(f"Событие: {event_details['title']}")
-print(f"Дата: {event_details['starts_at']}")
+```text
+1. get_unread_count
+2. если unread > 0 -> list_notifications
+3. list_recent_knowledge
+4. list_events
+5. если есть важное -> уведомить пользователя
 ```
 
-## Обработка ошибок
+## Rate limit и ошибки
 
-Агент должен корректно обрабатывать ошибки API:
+Лимиты зависят от тарифа:
 
-```python
-def api_request(method, path, **kwargs):
-    """Обёртка с обработкой ошибок."""
-    response = requests.request(
-        method, f"{BASE_URL}{path}",
-        headers=HEADERS, **kwargs
-    )
+- Free: `30/min`
+- Edge: `60/min`
+- Pro: `120/min`
+- VIP: `300/min`
 
-    if response.status_code == 429:
-        retry = int(response.headers.get("Retry-After", 60))
-        return {"error": f"Rate limit. Повтори через {retry}с."}
-
-    if response.status_code == 401:
-        return {"error": "Невалидный API-ключ."}
-
-    if response.status_code == 403:
-        return {"error": "Нет доступа. Проверь тариф."}
-
-    return response.json()
-```
-
-<Tip>
-Rate limit -- 60 запросов в минуту. Для большинства агентов этого хватает с запасом. Если агент делает запросы в цикле -- добавь паузу 1 секунду между запросами.
-</Tip>
+Если агент получает `rate_limit_exceeded`, добавь backoff и не делай агрессивный polling.
 
 ## Что дальше
 
 <CardGroup cols={2}>
-  <Card title="Scout Pattern" icon="shield" href="/guides/scout-pattern">
-    Двухуровневая защита от prompt injection
+  <Card title="Быстрый старт" icon="rocket" href="/quickstart">
+    Минимальное MCP-подключение без лишней теории
   </Card>
-  <Card title="Contributions" icon="pen" href="/guides/contributions">
-    Как стать контрибьютором
+  <Card title="Аутентификация" icon="key" href="/authentication">
+    Формат ключа, scopes и правила доступа
   </Card>
-  <Card title="API Reference" icon="book" href="/api-reference/introduction">
-    Все endpoints с примерами
+  <Card title="Обзор tools" icon="book" href="/api-reference/introduction">
+    Какие MCP tools доступны и как они сгруппированы
   </Card>
   <Card title="Безопасность ключей" icon="lock" href="/guides/api-key-security">
-    Хранение, ротация, отзыв
+    Хранение, ротация и удаление ключей
   </Card>
 </CardGroup>
-
----
-
-## Рекомендуемые cron-задачи
-
-Чтобы агент работал с платформой в фоновом режиме, настройте регулярные проверки. Агент становится вашим персональным секретарём -- сам отслеживает новости, события, запросы и уведомляет вас.
-
-### Обязательные (все тарифы)
-
-| Частота | Endpoint | Зачем |
-|---|---|---|
-| Каждые 5 мин | `GET /notifications/unread-count` | Новые уведомления (уроки, события, ответы) |
-| Раз в день (утро) | `GET /knowledge/list?sort=created_at_desc&limit=5` | Новые учебные материалы |
-| Раз в день (утро) | `GET /events?status=upcoming&limit=5` | Предстоящие события |
-
-### Для Pro и VIP
-
-| Частота | Endpoint | Зачем |
-|---|---|---|
-| Раз в день | `GET /network/matches` | Новые match'и по вашему профилю |
-| Каждые 30 мин | `GET /network/requests` | Входящие connect-запросы |
-| Каждые 15 мин | `GET /support/tickets?status=answered` | Ответы от поддержки |
-| Раз в день | `GET /contributions/my?status=pending` | Статус ревью ваших contributions |
-
-### Пример cron-конфига
-
-<CodeGroup>
-
-```bash crontab
-# Обязательные (каждый тариф)
-*/5 * * * *   edgelab-agent check-notifications
-0 9 * * *     edgelab-agent check-knowledge
-0 9 * * *     edgelab-agent check-events
-
-# Pro/VIP
-0 9 * * *     edgelab-agent check-matches
-*/30 * * * *  edgelab-agent check-connect-requests
-*/15 * * * *  edgelab-agent check-support-replies
-0 10 * * *    edgelab-agent check-contributions
-```
-
-```python Python (schedule)
-import schedule
-
-# Обязательные
-schedule.every(5).minutes.do(check_notifications)
-schedule.every().day.at("09:00").do(check_knowledge)
-schedule.every().day.at("09:00").do(check_events)
-
-# Pro/VIP
-schedule.every().day.at("09:00").do(check_matches)
-schedule.every(30).minutes.do(check_connect_requests)
-schedule.every(15).minutes.do(check_support_replies)
-schedule.every().day.at("10:00").do(check_contributions)
-```
-
-</CodeGroup>
-
-<Tip>
-Начните с 3 обязательных cron-задач. Этого достаточно, чтобы агент держал вас в курсе всего, что происходит на платформе. Добавляйте Pro/VIP задачи по мере необходимости.
-</Tip>

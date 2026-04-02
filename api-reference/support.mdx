@@ -1,415 +1,60 @@
 ---
 title: "Support"
-description: "API поддержки: FAQ, тикеты, ответы и запрос персонального созвона"
+description: "Публичный FAQ и MCP tools для тикетов поддержки"
 ---
 
-# Support API
+# Support
 
-Поддержка пользователей EdgeLab работает через два канала:
+Поддержка в EdgeLab делится на две части: публичный FAQ и личные support tools.
 
-- **Telegram-бот:** [@EdgeLabSupportBot](https://t.me/EdgeLabSupportBot) -- быстрый доступ через привычный интерфейс
-- **API:** Программный доступ для интеграций и автоматизации
+## Public
 
-<Info>
-**FAQ Flow:** Перед созданием тикета система проверяет FAQ. Если ответ найден -- отдаёт сразу. Если нет -- предлагает создать тикет.
-</Info>
-
-<Info>
-**Scope:** Для работы с тикетами требуется scope `support:write`, доступный на тарифах **Pro** и **VIP**. FAQ доступен без авторизации. Запрос созвона -- только **VIP** (scope `support:call-request`).
-</Info>
-
-## Уровни поддержки
-
-### Обычная поддержка (Pro и VIP)
-
-Тикеты через @EdgeLabSupportBot и API. Уведомления приходят через бот и колокольчик на платформе.
-
-### VIP-поддержка
-
-VIP-участники получают дополнительно:
-
-- **Выделенный VIP-чат с командой** -- отдельный чат, где присутствует команда EdgeLab. Можно задавать вопросы напрямую, не создавая тикет.
-- **Персональный созвон** -- один созвон в месяц (консультация от команды). Запрос через API endpoint `POST /support/call-request`.
-- **Приоритетная обработка тикетов** -- тикеты VIP-участников обрабатываются в первую очередь.
-
----
-
-## GET /support/faq
-
-Получить FAQ. Публичный endpoint -- авторизация не требуется.
-
-**Scope:** Публичный (без авторизации)
-**URL:** `GET https://api.edgelab.su/api/v1/support/faq`
-
-### Query-параметры
-
-<ParamField query="category" type="string">
-  Фильтр: `account`, `billing`, `api`, `platform`, `agents`
-</ParamField>
-
-<ParamField query="q" type="string">
-  Поиск по тексту вопросов и ответов
-</ParamField>
-
-### Пример ответа
-
-FAQ возвращает простой массив (не paginated envelope):
-
-```json
-[
-  {
-    "id": 1,
-    "keyword": "оплата",
-    "answer": "Оплата производится через платёжную систему на платформе.",
-    "priority": 10
-  },
-  {
-    "id": 2,
-    "keyword": "api ключ",
-    "answer": "Перейдите в Settings → API Keys и нажмите «Создать ключ». Ключ отображается один раз -- сохраните его.",
-    "priority": 5
-  }
-]
-```
-
-### Ошибки
-
-| HTTP код | Код ошибки | Когда |
+| Tool | Доступ | Что делает |
 |---|---|---|
-| 400 | `bad_request` | Невалидные параметры запроса |
-| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
+| `get_faq` | Public | Возвращает FAQ |
 
----
+FAQ можно читать даже без ключа. Это хороший первый шаг, прежде чем агент создаёт тикет.
 
-## POST /support/tickets
+## Personal support tools
 
-Создать тикет в службу поддержки.
+| Tool | Доступ | Что делает |
+|---|---|---|
+| `create_ticket` | Pro/VIP | Создаёт тикет |
+| `list_tickets` | Pro/VIP | Возвращает список тикетов |
+| `get_ticket` | Pro/VIP | Возвращает один тикет и его контекст |
+| `send_ticket_message` | Pro/VIP | Отправляет сообщение в тикет |
 
-**Scope:** `support:write` (Pro, VIP)
-**URL:** `POST https://api.edgelab.su/api/v1/support/tickets`
+## `get_faq`
 
-| Заголовок | Значение |
-|-----------|----------|
-| `Authorization` | `Bearer edgelab_live_...` |
-| `Content-Type` | `application/json` |
+Подходит для автоматического self-help flow:
 
-<ParamField body="subject" type="string" required>
-  Тема тикета (макс. 150 символов)
-</ParamField>
+1. агент сначала вызывает `get_faq`
+2. если подходящего ответа нет, идёт в support tools
 
-<ParamField body="message" type="string" required>
-  Описание проблемы (макс. 2000 символов)
-</ParamField>
+## `create_ticket`
 
-<ParamField body="category" type="string" required>
-  Категория: `account`, `billing`, `api`, `platform`, `agents`
-</ParamField>
+Создаёт новый тикет.
 
-### Пример запроса
+Типичный минимум:
 
-<CodeGroup>
-```bash cURL
-curl -X POST https://api.edgelab.su/api/v1/support/tickets \
-  -H "Authorization: Bearer edgelab_live_abc123" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "subject": "API возвращает 429 при низкой нагрузке",
-    "message": "Получаю 429 при 50 req/min на Pro. Лимит должен быть 500.",
-    "category": "api"
-  }'
+- тема
+- сообщение
+- категория или контекст проблемы
+
+## `list_tickets`
+
+Нужен для фонового мониторинга открытых запросов и ожидания ответа.
+
+## `get_ticket`
+
+Возвращает детали конкретного тикета и историю обсуждения.
+
+## `send_ticket_message`
+
+Позволяет продолжить уже открытый тикет, не создавая новый.
+
+### Практический flow
+
+```text
+get_faq -> create_ticket -> list_tickets -> get_ticket -> send_ticket_message
 ```
-
-```python Python
-import requests
-
-API_KEY = "edgelab_live_abc123"
-
-response = requests.post(
-    "https://api.edgelab.su/api/v1/support/tickets",
-    headers={
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
-    },
-    json={
-        "subject": "API возвращает 429 при низкой нагрузке",
-        "message": "Получаю 429 при 50 req/min на Pro. Лимит должен быть 500.",
-        "category": "api"
-    }
-)
-
-print(response.json())
-```
-</CodeGroup>
-
-### Пример ответа (201 Created)
-
-```json
-{
-  "id": 1,
-  "subject": "API возвращает 429 при низкой нагрузке",
-  "category": "api",
-  "status": "open",
-  "author": {
-    "display_name": "developer42"
-  },
-  "created_at": "2026-03-21T14:15:00Z"
-}
-```
-
-### Ошибки
-
-| HTTP код | Код ошибки | Когда |
-|----------|------------|-------|
-| 400 | `bad_request` | Невалидные параметры запроса |
-| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
-| 403 | `forbidden` | Тариф Edge -- scope `support:write` недоступен |
-| 422 | `validation_error` | Невалидные данные: пустой subject, неизвестная category |
-| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
-
----
-
-## GET /support/tickets
-
-Получить список своих тикетов.
-
-**Scope:** `support:write` (Pro, VIP)
-**URL:** `GET https://api.edgelab.su/api/v1/support/tickets`
-
-<ParamField query="status" type="string">
-  Фильтр: `open`, `answered`, `closed`
-</ParamField>
-
-<ParamField query="limit" type="integer" default="20">
-  Количество элементов (макс. 100)
-</ParamField>
-
-<ParamField query="offset" type="integer" default="0">
-  Смещение от начала списка
-</ParamField>
-
-### Пример ответа
-
-```json
-{
-  "items": [
-    {
-      "id": 1,
-      "subject": "API возвращает 429 при низкой нагрузке",
-      "category": "api",
-      "status": "open",
-      "replies_count": 0,
-      "created_at": "2026-03-21T14:15:00Z"
-    }
-  ],
-  "total": 1,
-  "limit": 20,
-  "offset": 0,
-  "has_more": false
-}
-```
-
-### Ошибки
-
-| HTTP код | Код ошибки | Когда |
-|----------|------------|-------|
-| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
-| 403 | `forbidden` | Тариф Edge -- scope `support:write` недоступен |
-| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
-
----
-
-## GET /support/tickets/{id}
-
-Получить детали тикета с историей ответов.
-
-**Scope:** `support:write` (Pro, VIP)
-**URL:** `GET https://api.edgelab.su/api/v1/support/tickets/{id}`
-
-<ParamField path="id" type="integer" required>
-  Идентификатор тикета
-</ParamField>
-
-### Пример ответа
-
-```json
-{
-  "id": 1,
-  "subject": "API возвращает 429 при низкой нагрузке",
-  "message": "Получаю 429 при 50 req/min на Pro. Лимит должен быть 500.",
-  "category": "api",
-  "status": "answered",
-  "replies": [
-    {
-      "id": 1,
-      "from": "support",
-      "message": "Обнаружена аномалия в rate limiter -- исправление развёрнуто. Попробуйте снова.",
-      "created_at": "2026-03-21T15:30:00Z"
-    }
-  ],
-  "created_at": "2026-03-21T14:15:00Z",
-  "updated_at": "2026-03-21T15:30:00Z"
-}
-```
-
-### Ошибки
-
-| HTTP код | Код ошибки | Когда |
-|----------|------------|-------|
-| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
-| 403 | `forbidden` | Тариф Edge -- scope `support:write` недоступен |
-| 404 | `not_found` | Тикет не найден |
-| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
-
----
-
-## POST /support/tickets/{id}/reply
-
-Ответить в существующем тикете.
-
-**Scope:** `support:write` (Pro, VIP)
-**URL:** `POST https://api.edgelab.su/api/v1/support/tickets/{id}/reply`
-
-<ParamField path="id" type="integer" required>
-  Идентификатор тикета
-</ParamField>
-
-<ParamField body="message" type="string" required>
-  Текст ответа (макс. 2000 символов)
-</ParamField>
-
-### Пример запроса
-
-<CodeGroup>
-```bash cURL
-curl -X POST https://api.edgelab.su/api/v1/support/tickets/1/reply \
-  -H "Authorization: Bearer edgelab_live_abc123" \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Проблема решена, лимиты работают корректно. Спасибо!"}'
-```
-</CodeGroup>
-
-### Пример ответа (201 Created)
-
-```json
-{
-  "id": 2,
-  "ticket_id": 1,
-  "from": "user",
-  "message": "Проблема решена, лимиты работают корректно. Спасибо!",
-  "created_at": "2026-03-21T16:00:00Z"
-}
-```
-
-### Ошибки
-
-| HTTP код | Код ошибки | Когда |
-|----------|------------|-------|
-| 400 | `bad_request` | Невалидные параметры запроса |
-| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
-| 403 | `forbidden` | Тариф Edge -- scope `support:write` недоступен |
-| 404 | `not_found` | Тикет не найден |
-| 422 | `validation_error` | Пустое сообщение или тикет закрыт |
-| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
-
----
-
-## POST /support/call-request
-
-Запросить персональный созвон с основателем. Только тариф VIP.
-
-**Scope:** `support:call-request` (VIP)
-**URL:** `POST https://api.edgelab.su/api/v1/support/call-request`
-
-<Warning>
-Доступно только пользователям на тарифе **VIP**. Другие тарифы получат `403 Forbidden`.
-</Warning>
-
-<Info>
-Допускается несколько активных запросов на созвон одновременно (например, по разным темам). Каждый запрос обрабатывается независимо.
-</Info>
-
-<ParamField body="topic" type="string" required>
-  Тема созвона (макс. 200 символов)
-</ParamField>
-
-<ParamField body="preferred_time" type="string">
-  Предпочтительное время (ISO 8601)
-</ParamField>
-
-<ParamField body="notes" type="string">
-  Дополнительные заметки (макс. 500 символов)
-</ParamField>
-
-### Пример запроса
-
-<CodeGroup>
-```bash cURL
-curl -X POST https://api.edgelab.su/api/v1/support/call-request \
-  -H "Authorization: Bearer edgelab_live_abc123" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "topic": "Интеграция AI-агентов в production workflow",
-    "preferred_time": "2026-03-25T15:00:00Z",
-    "notes": "Обсудить архитектуру multi-agent системы"
-  }'
-```
-
-```python Python
-import requests
-
-API_KEY = "edgelab_live_abc123"
-
-response = requests.post(
-    "https://api.edgelab.su/api/v1/support/call-request",
-    headers={
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
-    },
-    json={
-        "topic": "Интеграция AI-агентов в production workflow",
-        "preferred_time": "2026-03-25T15:00:00Z",
-        "notes": "Обсудить архитектуру multi-agent системы"
-    }
-)
-
-print(response.json())
-```
-</CodeGroup>
-
-### Пример ответа (201 Created)
-
-```json
-{
-  "id": 1,
-  "topic": "Интеграция AI-агентов в production workflow",
-  "status": "requested",
-  "preferred_time": "2026-03-25T15:00:00Z",
-  "created_at": "2026-03-21T16:30:00Z"
-}
-```
-
-### Lifecycle созвона
-
-| Статус | Описание |
-|--------|----------|
-| `requested` | Запрос отправлен, ожидает рассмотрения |
-| `scheduled` | Созвон запланирован, время подтверждено |
-| `completed` | Созвон состоялся |
-| `declined` | Запрос отклонён (с комментарием) |
-| `cancelled` | Отменён пользователем или администратором |
-
-При каждом изменении статуса приходит уведомление типа `support_call_updated`.
-
-### Ошибки
-
-| HTTP код | Код ошибки | Когда |
-|----------|------------|-------|
-| 400 | `bad_request` | Невалидные параметры запроса |
-| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
-| 403 | `forbidden` | Тариф пользователя не VIP |
-| 422 | `validation_error` | Пустая тема |
-| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
-
-<Tip>
-При ответе на тикет или изменении статуса созвона вы получите уведомление через @EdgeLabSupportBot и колокольчик на платформе.
-</Tip>

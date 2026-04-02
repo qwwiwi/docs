@@ -1,365 +1,82 @@
 ---
 title: "Network"
-description: "Matching участников, поиск по навыкам и запросы на сотрудничество"
+description: "MCP tools для сообщества и matching: список участников, поиск, совпадения и connect-запросы"
 ---
 
-# Network API
+# Network
 
-Система нетворкинга Edge Lab строится на принципе **matching** -- платформа подбирает участников по навыкам, интересам и городу. Контакты раскрываются только при взаимном согласии (**double opt-in**: request + accept = взаимное согласие обеих сторон).
+Нетворк в EdgeLab нужен, чтобы агент мог искать людей, находить совпадения и инициировать контакт.
 
-<Note>
-Все endpoints используют авторизацию Bearer API-key: `Authorization: Bearer edgelab_live_...`
+## Доступные tools
 
-Base URL: `https://api.edgelab.su/api/v1`
-</Note>
-
-<Info>
-**Тарифы:** Чтение (`network:read`) доступно на **всех тарифах** (Edge, Pro, VIP). Запись (`network:write`) -- создание запросов на подключение, принятие/отклонение -- только **Pro** и **VIP**.
-</Info>
-
-## Принципы приватности
-
-- Карточка участника содержит только публичные данные: имя, город, чем занимается, чем полезен, что ищет
-- **Приватные идентификаторы никогда не возвращаются через API**
-- Контактные данные раскрываются только после взаимного accept (double opt-in) -- и только данные из профиля contacts, заполненные участником самостоятельно
-
----
-
-## GET /network/members
-
-Полнотекстовый поиск участников сообщества с фильтрацией по навыкам, городу, интересам и статусу.
-
-**Scope:** `network:read` (все тарифы)
-
-**Полный URL:** `GET https://api.edgelab.su/api/v1/network/members`
-
-### Query-параметры
-
-| Параметр | Тип | По умолчанию | Описание |
-|---|---|---|---|
-| `q` | string | -- | Полнотекстовый поиск по имени, навыкам, описанию |
-| `skills` | string | -- | Фильтр по навыкам (через запятую): `python,trading,design` |
-| `city` | string | -- | Фильтр по городу: `moscow`, `bangkok`, `phuket` |
-| `interests` | string | -- | Фильтр по интересам: `crypto,ai,marketing` |
-| `work_status` | string | -- | Статус: `none`, `hiring`, `looking`, `contractor`, `consulting`, `open`, `partner`, `brainstorm` |
-| `limit` | integer | 20 | Количество результатов (макс. 100) |
-| `offset` | integer | 0 | Смещение для пагинации |
-
-### Пример ответа
-
-```json
-{
-  "items": [
-    {
-      "id": 123456789,
-      "name": "Алексей К.",
-      "city": "Москва",
-      "occupation": "ML-инженер, 5 лет опыта",
-      "skills": ["python", "machine-learning", "trading-bots"],
-      "useful_for": "Могу помочь с автоматизацией трейдинга и ML-моделями",
-      "looking_for": "Ищу партнёра для крипто-проекта",
-      "work_status": "partner",
-      "match_score": 0.87
-    },
-    {
-      "id": 164795012,
-      "name": "Мария Д.",
-      "city": "Бангкок",
-      "occupation": "UX-дизайнер, Web3",
-      "skills": ["figma", "ux-research", "web3"],
-      "useful_for": "Дизайн продуктов, UX-аудиты",
-      "looking_for": "Проекты в DeFi и AI",
-      "work_status": "looking",
-      "match_score": 0.72
-    }
-  ],
-  "total": 156,
-  "limit": 20,
-  "offset": 0,
-  "has_more": true
-}
-```
-
-<Tip>
-Поле `match_score` (0.0–1.0) показывает релевантность участника вашему профилю. Чем выше -- тем лучше matching.
-</Tip>
-
-### Ошибки
-
-| HTTP код | Код ошибки | Когда |
+| Tool | Доступ | Что делает |
 |---|---|---|
-| 400 | `bad_request` | Невалидные параметры запроса |
-| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
-| 403 | `forbidden` | Недостаточно scopes |
-| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
-
----
-
-## GET /network/matches
-
-Список участников, которых платформа подобрала как наиболее подходящих на основе вашего профиля, навыков и интересов.
-
-**Scope:** `network:read` (все тарифы)
-
-**Полный URL:** `GET https://api.edgelab.su/api/v1/network/matches`
-
-### Query-параметры
-
-| Параметр | Тип | По умолчанию | Описание |
-|---|---|---|---|
-| `limit` | integer | 10 | Количество результатов (макс. 50) |
-| `offset` | integer | 0 | Смещение для пагинации |
-
-### Пример ответа
-
-```json
-{
-  "items": [
-    {
-      "id": 123456789,
-      "name": "Алексей К.",
-      "city": "Москва",
-      "occupation": "ML-инженер, 5 лет опыта",
-      "skills": ["python", "machine-learning", "trading-bots"],
-      "useful_for": "Могу помочь с автоматизацией трейдинга",
-      "looking_for": "Ищу партнёра для крипто-проекта",
-      "match_score": 0.92,
-      "match_reasons": ["Общие навыки: python", "Оба интересуются crypto"]
-    }
-  ],
-  "total": 12,
-  "limit": 10,
-  "offset": 0,
-  "has_more": true
-}
-```
-
-### Ошибки
-
-| HTTP код | Код ошибки | Когда |
-|---|---|---|
-| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
-| 403 | `forbidden` | Недостаточно scopes |
-| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
-
----
-
-## POST /network/connect
-
-Отправить запрос на подключение к участнику. Это первый шаг в системе double opt-in -- контакты раскроются только после ответного accept.
-
-**Scope:** `network:write` (Pro, VIP)
-
-**Полный URL:** `POST https://api.edgelab.su/api/v1/network/connect`
-
-### Параметры запроса (body)
-
-| Параметр | Тип | Обязательный | Описание |
-|---|---|---|---|
-| `target_member_id` | integer | Да | ID участника, которому отправляется запрос |
-| `message` | string | Нет | Сопроводительное сообщение (макс. 500 символов) |
-
-### Пример запроса
-
-<CodeGroup>
-```bash cURL
-curl -X POST https://api.edgelab.su/api/v1/network/connect \
-  -H "Authorization: Bearer edgelab_live_abc123" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "target_member_id": 123456789,
-    "message": "Привет! Увидел, что ты работаешь с ML для трейдинга. Хочу обсудить совместный проект."
-  }'
-```
-</CodeGroup>
-
-### Пример ответа (201 Created)
-
-```json
-{
-  "request_id": 1,
-  "status": "pending",
-  "target_member_id": 123456789,
-  "created_at": "2025-03-15T10:30:00Z"
-}
-```
-
-### Ошибки
-
-| HTTP код | Код ошибки | Когда |
-|---|---|---|
-| 400 | `bad_request` | Невалидные параметры запроса |
-| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
-| 403 | `forbidden` | Тариф Edge -- scope `network:write` недоступен |
-| 404 | `not_found` | Участник с указанным ID не найден |
-| 409 | `conflict` | Уже есть pending-запрос к этому участнику |
-| 422 | `validation_error` | Попытка отправить запрос самому себе |
-| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
-
----
-
-## GET /network/requests
-
-Список входящих и исходящих запросов на подключение.
-
-**Scope:** `network:read` (все тарифы)
-
-**Полный URL:** `GET https://api.edgelab.su/api/v1/network/requests`
-
-### Query-параметры
-
-| Параметр | Тип | По умолчанию | Описание |
-|---|---|---|---|
-| `direction` | string | -- | Фильтр: `incoming`, `outgoing`. Без фильтра -- все |
-| `status` | string | -- | Фильтр: `pending`, `accepted`, `rejected` |
-| `limit` | integer | 20 | Количество результатов (макс. 100) |
-| `offset` | integer | 0 | Смещение для пагинации |
-
-### Пример ответа
-
-```json
-{
-  "items": [
-    {
-      "id": 1,
-      "direction": "incoming",
-      "status": "pending",
-      "from": {
-        "id": 164795012,
-        "name": "Мария Д.",
-        "city": "Бангкок",
-        "occupation": "UX-дизайнер, Web3"
-      },
-      "message": "Хочу обсудить дизайн для DeFi-проекта",
-      "created_at": "2025-03-14T15:00:00Z"
-    },
-    {
-      "id": 2,
-      "direction": "outgoing",
-      "status": "accepted",
-      "to": {
-        "id": 123456789,
-        "name": "Алексей К.",
-        "city": "Москва",
-        "occupation": "ML-инженер"
-      },
-      "contact_info": {
-        "telegram": "@alexey_ml"
-      },
-      "message": "Привет! Хочу обсудить совместный проект.",
-      "created_at": "2025-03-10T12:00:00Z",
-      "resolved_at": "2025-03-11T09:15:00Z"
-    }
-  ],
-  "total": 5,
-  "limit": 20,
-  "offset": 0,
-  "has_more": false
-}
-```
-
-<Info>
-Поле `contact_info` появляется **только** у запросов со статусом `accepted` -- это и есть механизм double opt-in. До взаимного согласия контакты скрыты. Контактные данные берутся из профиля contacts участника (например, telegram-username).
-</Info>
-
-### Ошибки
-
-| HTTP код | Код ошибки | Когда |
-|---|---|---|
-| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
-| 403 | `forbidden` | Недостаточно scopes |
-| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
-
----
-
-## PATCH /network/requests/{id}
-
-Принять или отклонить входящий запрос на подключение.
-
-**Scope:** `network:write` (Pro, VIP)
-
-**Полный URL:** `PATCH https://api.edgelab.su/api/v1/network/requests/{id}`
-
-### Параметры пути
-
-| Параметр | Тип | Описание |
-|---|---|---|
-| `id` | integer | ID запроса |
-
-### Параметры запроса (body)
-
-| Параметр | Тип | Обязательный | Описание |
-|---|---|---|---|
-| `action` | string | Да | Действие: `accept` или `reject` |
-
-### Пример запроса
-
-<CodeGroup>
-```bash cURL
-curl -X PATCH https://api.edgelab.su/api/v1/network/requests/1 \
-  -H "Authorization: Bearer edgelab_live_abc123" \
-  -H "Content-Type: application/json" \
-  -d '{"action": "accept"}'
-```
-</CodeGroup>
-
-### Пример ответа (accept)
-
-```json
-{
-  "id": 1,
-  "status": "accepted",
-  "contact_info": {
-    "telegram": "@maria_ux"
-  },
-  "resolved_at": "2025-03-15T11:00:00Z"
-}
-```
-
-### Ошибки
-
-| HTTP код | Код ошибки | Когда |
-|---|---|---|
-| 400 | `bad_request` | Невалидный action (не `accept` и не `reject`) |
-| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
-| 403 | `forbidden` | Тариф Edge -- scope `network:write` недоступен |
-| 404 | `not_found` | Запрос не найден или не принадлежит вам |
-| 422 | `validation_error` | Запрос уже обработан (не в статусе pending) |
-| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
-
----
-
-## Карточка участника
-
-Каждый участник в результатах поиска и matching представлен карточкой:
-
-| Поле | Описание |
-|---|---|
-| `name` | Имя (как указано в профиле) |
-| `city` | Город проживания |
-| `occupation` | Чем занимается |
-| `skills` | Список навыков |
-| `useful_for` | Чем может быть полезен |
-| `looking_for` | Что ищет |
-| `work_status` | Текущий статус |
+| `list_members` | Pro/VIP | Возвращает список участников |
+| `search_members` | Pro/VIP | Ищет участников по фильтрам и запросу |
+| `get_matches` | Pro/VIP | Возвращает алгоритмические совпадения |
+| `list_connect_requests` | Pro/VIP | Список входящих и исходящих connect-запросов |
+| `send_connect_request` | Pro/VIP | Отправляет connect-запрос |
+| `respond_connect_request` | Pro/VIP | Принимает или отклоняет запрос |
 
 <Warning>
-Карточка **никогда** не содержит приватные идентификаторы. Эти поля доступны только после взаимного accept через поле `contact_info` в запросах -- и только данные из профиля contacts (например, telegram-username).
+В общем тарифном описании network-функции присутствуют уже на Edge, но социальный MCP-контур с `list_members` и connect-tools в текущем наборе tools зафиксирован как `Pro/VIP`. Если продукт это изменит, править нужно одновременно и этот раздел, и таблицы тарифов.
 </Warning>
 
----
+## `list_members`
 
-## Паттерн работы агента
+Подходит для обзора каталога участников и построения собственных shortlist'ов.
 
-Рекомендуемый flow для AI-агента при работе с Network API:
+## `search_members`
 
-1. **Поиск:** `GET /network/matches` -- получить автоматические match'и хозяина
-2. **Уточнение:** `GET /network/members?skills=python&city=moscow` -- поиск по конкретным критериям
-3. **Спросить хозяина:** показать карточки подходящих участников, получить подтверждение
-4. **Коннект:** `POST /network/connect` -- отправить запрос с сопроводительным сообщением (Pro/VIP)
-5. **Мониторинг:** `GET /network/requests?direction=incoming&status=pending` -- проверять новые входящие запросы
-6. **Обработка:** `PATCH /network/requests/{id}` -- принять/отклонить после подтверждения хозяина (Pro/VIP)
+Используй, когда агент ищет людей под конкретную задачу:
 
-<Tip>
-Агент **никогда** не должен принимать или отклонять запросы автоматически. Всегда спрашивайте хозяина перед действием.
-</Tip>
+- по навыкам
+- по интересам
+- по роли
+- по городу
+- по текстовому запросу
+
+## `get_matches`
+
+Это самый удобный старт, если не хочется строить поиск вручную. Платформа уже отдает наиболее релевантные совпадения по профилю.
+
+## `list_connect_requests`
+
+Нужен для мониторинга состояния диалогов:
+
+- кто отправил запрос
+- кому уже отправили
+- что ещё pending
+
+## `send_connect_request`
+
+Отправляет инициирующий запрос.
+
+### Пример вызова
+
+```json
+{
+  "name": "send_connect_request",
+  "arguments": {
+    "target_user_id": "user_123",
+    "message": "Вижу совпадение по AI automation и crypto. Давай познакомимся."
+  }
+}
+```
+
+## `respond_connect_request`
+
+Нужен для ответа на входящий запрос.
+
+Типичный аргумент:
+
+- id запроса
+- решение: accept или reject
+
+## Практика
+
+Хороший flow:
+
+```text
+get_matches -> search_members -> send_connect_request -> list_connect_requests -> respond_connect_request
+```

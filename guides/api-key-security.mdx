@@ -1,24 +1,23 @@
 ---
 title: "Безопасность API-ключей"
-description: "Best practices: хранение, ротация, отзыв и мониторинг API-ключей EdgeLab"
+description: "Практические правила: хранение, ротация, удаление и мониторинг API-ключей EdgeLab"
 ---
 
 # Безопасность API-ключей
 
-API-ключ даёт доступ к твоему аккаунту на EdgeLab. Если ключ утечёт -- кто-то сможет действовать от твоего имени. Этот гайд -- чеклист best practices.
+API-ключ в EdgeLab даёт доступ к MCP tools от имени пользователя. Если ключ утечёт, кто-то сможет вызывать personal tools как будто это твой агент.
 
-## Правило №1: никогда не коммитить ключ в git
+## Правило №1: не коммить ключ в git
 
 <Warning>
-Даже если удалишь коммит -- git хранит историю. Ключ, попавший в репозиторий хотя бы на секунду, считается скомпрометированным.
+Если ключ попал в репозиторий хотя бы на секунду, считай его скомпрометированным.
 </Warning>
 
 <Steps>
 
-<Step title="Добавь исключения в .gitignore">
+<Step title="Добавь секреты в `.gitignore`">
 
 ```bash
-# .gitignore
 .env
 .secrets/
 *.key
@@ -26,206 +25,104 @@ API-ключ даёт доступ к твоему аккаунту на EdgeLab
 
 </Step>
 
-<Step title="Проверь, что ключ не в истории">
+<Step title="Проверь историю на утечки">
 
 ```bash
-# Поиск утечек в git-истории
-git log --all -p | grep -i "edgelab_live_"
+git log --all -p | grep -i "el_live_"
 ```
 
-Если нашёл -- немедленно [отзови ключ](#экстренный-отзыв) и создай новый.
+Если нашёл совпадение, сразу ротируй или удаляй ключ.
 
 </Step>
 
 </Steps>
 
-## Хранение ключей
+## Формат ключа
 
-Три надёжных способа, от простого к продвинутому:
+```text
+el_live_1a8c25f8b7165604
+```
+
+- префикс: `el_live_`
+- хвост: `16` hex-символов
+- общая длина: `24`
+
+## Где хранить
 
 <CodeGroup>
-
 ```bash Переменные окружения
-# В ~/.zshrc или ~/.bashrc
-export EDGELAB_API_KEY="edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
-
-# В коде
-import os
-API_KEY = os.environ["EDGELAB_API_KEY"]
+export EDGELAB_API_KEY="el_live_1a8c25f8b7165604"
 ```
 
 ```bash Файл ~/.secrets/
-# Создай защищённую директорию
 mkdir -p ~/.secrets
-echo 'EDGELAB_API_KEY=edgelab_live_...' > ~/.secrets/edgelab.env
+echo 'EDGELAB_API_KEY=el_live_1a8c25f8b7165604' > ~/.secrets/edgelab.env
 chmod 600 ~/.secrets/edgelab.env
-
-# В коде (Python)
-from dotenv import load_dotenv
-load_dotenv("~/.secrets/edgelab.env")
 ```
 
 ```bash 1Password CLI
-# Сохрани ключ в 1Password
 op item create --category=api_credential \
   --title="EdgeLab API Key" \
-  --url="https://api.edgelab.su" \
-  "credential=edgelab_live_..."
-
-# В коде -- через op read
-export EDGELAB_API_KEY=$(op read "op://Vault/EdgeLab API Key/credential")
+  --url="https://mcp.edgelab.su/mcp" \
+  "credential=el_live_1a8c25f8b7165604"
 ```
-
 </CodeGroup>
 
-<Tip>
-Переменные окружения -- самый простой вариант. Если у тебя один агент и один сервер -- этого достаточно.
-</Tip>
+## Ротация
 
-## Ротация ключей
+Если ключ засветился, ротируй его через MCP tool `rotate_api_key`.
 
-Ротируй ключ, если:
-- Ключ мог быть виден кому-то (экран, лог, скриншот)
-- Ключ попал в публичный репозиторий
-- Прошло больше 90 дней с последней ротации
-
-При ротации старый ключ деактивируется мгновенно, создаётся новый:
-
-<CodeGroup>
-
-```bash curl
-curl -X POST https://api.edgelab.su/api/v1/auth/keys/rotate \
-  -H "Authorization: Bearer $EDGELAB_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"prefix": "edgelab_live_a1b2c3d4"}'
-```
-
-```python Python
-import requests
-import os
-
-response = requests.post(
-    "https://api.edgelab.su/api/v1/auth/keys/rotate",
-    headers={
-        "Authorization": f"Bearer {os.environ['EDGELAB_API_KEY']}",
-        "Content-Type": "application/json"
-    },
-    json={"prefix": "edgelab_live_a1b2c3d4"}
-)
-
-new_key = response.json()["new_key"]
-print(f"Новый ключ: {new_key}")
-# Сразу обнови ключ во всех местах!
-```
-
-</CodeGroup>
-
-<Warning>
-После ротации старый ключ перестаёт работать мгновенно. Обнови ключ во всех конфигах сразу.
-</Warning>
-
-## Scopes
-
-Ключ автоматически получает scopes по тарифу. Вручную выбрать нельзя:
-
-| Тариф | Scopes |
-|---|---|
-| **Edge** | `profile:read`, `profile:write`, `knowledge:read`, `events:read`, `network:read` |
-| **Pro** | Всё из Edge + `support:write`, `contributions:write`, `events:write`, `network:write` |
-| **VIP** | Всё из Pro + `support:call-request` |
-
-При апгрейде тарифа scopes расширяются автоматически.
-
-## Rate limits
-
-**60 запросов в минуту** на один API-ключ. При превышении -- ответ `429 Too Many Requests`:
+Пример payload:
 
 ```json
 {
-  "error": {
-    "code": "rate_limit_exceeded",
-    "message": "Превышен лимит запросов.",
-    "retry_after": 30
+  "name": "rotate_api_key",
+  "arguments": {
+    "prefix": "el_live_1a8c25f8"
   }
 }
 ```
 
-Заголовок `Retry-After` указывает, сколько секунд ждать. Агент должен уметь обрабатывать 429:
+<Warning>
+После ротации старый ключ перестаёт работать сразу.
+</Warning>
 
-```python
-import time
+## Удаление
 
-def api_request(method, path, **kwargs):
-    response = requests.request(method, f"{BASE_URL}{path}", **kwargs)
-    if response.status_code == 429:
-        wait = int(response.headers.get("Retry-After", 60))
-        time.sleep(wait)
-        return api_request(method, path, **kwargs)  # retry
-    return response.json()
-```
-
-<Tip>
-60 запросов в минуту = один запрос в секунду. Если агент делает запросы в цикле -- добавь `time.sleep(1)`.
-</Tip>
-
-## Экстренный отзыв
-
-Если ключ скомпрометирован -- отзови немедленно:
-
-<CodeGroup>
-
-```bash curl
-curl -X POST https://api.edgelab.su/api/v1/auth/keys/revoke \
-  -H "Authorization: Bearer $EDGELAB_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"prefix": "edgelab_live_СКОМПРОМЕТИРОВАННЫЙ"}'
-```
-
-```python Python
-response = requests.post(
-    "https://api.edgelab.su/api/v1/auth/keys/revoke",
-    headers={"Authorization": f"Bearer {os.environ['EDGELAB_API_KEY']}"},
-    json={"prefix": "edgelab_live_СКОМПРОМЕТИРОВАННЫЙ"}
-)
-print("Ключ отозван" if response.status_code == 200 else "Ошибка")
-```
-
-</CodeGroup>
-
-Отозванный ключ нельзя восстановить. Создай новый через веб-интерфейс или API.
-
-## Мониторинг
-
-Проверяй `last_used_at` в списке ключей -- если ключ используется, а ты его не трогал, это повод для беспокойства:
-
-```bash
-curl -X GET https://api.edgelab.su/api/v1/auth/keys \
-  -H "Authorization: Bearer $EDGELAB_API_KEY"
-```
+Если ключ больше не нужен, используй `delete_api_key`.
 
 ```json
 {
-  "items": [
-    {
-      "prefix": "edgelab_live_a1b2c3d4",
-      "created_at": "2025-01-15T10:00:00Z",
-      "last_used_at": "2025-03-20T14:30:00Z",
-      "scopes": ["profile:read", "knowledge:read", "..."]
-    }
-  ],
-  "total": 1,
-  "limit": 20,
-  "offset": 0,
-  "has_more": false
+  "name": "delete_api_key",
+  "arguments": {
+    "prefix": "el_live_1a8c25f8"
+  }
 }
 ```
 
+## Мониторинг
+
+Регулярно вызывай `list_api_keys` и проверяй:
+
+- неожиданные ключи
+- подозрительный `last_used_at`
+- ключи без понятного имени
+
+## Лимиты
+
+Ориентируйся на свой тариф:
+
+- Free: `30/min`
+- Edge: `60/min`
+- Pro: `120/min`
+- VIP: `300/min`
+
+Если агент получает `rate_limit_exceeded`, добавь backoff и убери частый polling.
+
 ## Чеклист
 
-- [ ] Ключ хранится в переменных окружения или `~/.secrets/`
-- [ ] `.secrets/`, `.env` добавлены в `.gitignore`
-- [ ] В git-истории нет следов ключей
-- [ ] Ключи ротируются минимум раз в 90 дней
-- [ ] Агент обрабатывает 429 с `Retry-After`
-- [ ] `last_used_at` проверяется периодически
-- [ ] У каждого агента свой ключ (если агентов несколько)
+- [ ] Ключ хранится вне репозитория
+- [ ] В git нет `el_live_...`
+- [ ] У каждого агента свой отдельный ключ
+- [ ] Есть понятные имена у ключей
+- [ ] Подозрительные ключи удаляются или ротируются сразу

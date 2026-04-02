@@ -1,120 +1,195 @@
 ---
 title: "Тарифы"
-description: "Edge, Pro и VIP -- что доступно на каждом уровне EdgeLab"
+description: "Free, Edge, Pro и VIP -- какие данные, scopes и MCP tools доступны на каждом уровне EdgeLab"
 ---
 
 # Тарифы
 
-EdgeLab предлагает три тарифа. Каждый открывает доступ к определённому набору функций платформы и API scopes.
+В EdgeLab доступ к MCP зависит от тарифа. Важно: это не REST API и не набор endpoint'ов. Платформа работает через MCP-сервер `https://mcp.edgelab.su/mcp`, а набор доступных tools определяется твоим уровнем доступа.
+
+<Info>
+Цены в этой документации не публикуются. Если нужен актуальный состав планов и статусы подписок, смотри `get_billing_plans`.
+</Info>
 
 ## Сравнение тарифов
 
-| Возможность | Edge | Pro | VIP |
-|---|:---:|:---:|:---:|
-| Профиль (чтение/запись) | + | + | + |
-| Уведомления | + | + | + |
-| Knowledge (учебные материалы) | + | + | + |
-| Network (поиск участников) | + | + | + |
-| Events (просмотр событий) | + | + | + |
-| Support (тикеты) | -- | + | + |
-| Contributions (скиллы, уроки) | -- | + | + |
-| Network (connect-запросы) | -- | + | + |
-| Предложить событие | -- | + | + |
-| Выделенный VIP-чат с командой | -- | -- | + |
-| Персональный созвон (1 в месяц) | -- | -- | + |
-| Приоритетная обработка тикетов | -- | -- | + |
+| Возможность | Free | Edge | Pro | VIP |
+|---|:---:|:---:|:---:|:---:|
+| Публичные гайды | + | + | + | + |
+| Уроки, скиллы, воркшопы | -- | + | + | + |
+| Use cases | -- | -- | + | + |
+| Live-записи | -- | + | + | + |
+| Профиль | -- | + | + | + |
+| Прогресс обучения | -- | + | + | + |
+| Поинты и достижения | -- | + | + | + |
+| Уведомления | -- | + | + | + |
+| Биллинг и подписка | -- | + | + | + |
+| Поддержка | -- | + | + | + |
+| Events: просмотр и RSVP | -- | + | + | + |
+| Events: предложить событие | -- | -- | + | + |
+| Нетворк и matching | -- | + | + | + |
+| Contributions | -- | + | + | + |
+| Рефералы | -- | + | + | -- |
+| Priority support | -- | -- | + | + |
+| Early access | -- | -- | -- | + |
 
-<Info>
-Актуальные цены -- на [api.edgelab.su](https://api.edgelab.su)
-</Info>
+## Free
+
+Подходит, если ты только знакомишься с EdgeLab и хочешь посмотреть базу гайдов без авторизации.
+
+- Scope: `knowledge:read`
+- Доступный контент: только `guide`
+- Rate limit: `30/min`
+- Видимые публичные tools: `search_knowledge`, `list_knowledge`, `get_sections`, `get_faq`, `health`, `get_billing_plans`, `register`, `email_login`
+
+Free работает даже без ключа. Если клиент умеет подключаться к MCP-серверу без заголовков авторизации, ты уже можешь читать публичную часть базы знаний.
 
 ## Edge
 
-Базовый тариф для тех, кто начинает строить агентов. Включает всё необходимое для обучения:
+Это основной рабочий уровень для человека и его агента: обучение, профиль, прогресс, события, поддержка, нетворк и contributions уже доступны.
 
-- Доступ ко всем учебным материалам (Knowledge)
-- Управление профилем
-- Просмотр участников сообщества и событий
-- Уведомления
+- Scopes: `21`
+- Контент: `guide`, `lesson`, `skill`, `workshop`, `live`
+- Rate limit: `60/min`
 
-### API scopes
+### Полный список scopes
 
+```text
+knowledge:read
+knowledge:write
+profile:read
+profile:write
+progress:read
+progress:write
+achievements:read
+points:read
+billing:read
+billing:write
+support:read
+support:write
+notifications:read
+notifications:write
+events:read
+network:read
+network:write
+contributions:read
+contributions:write
+referrals:read
+referrals:write
 ```
-profile:read, profile:write, knowledge:read, events:read, network:read
-```
-
-Edge -- хороший старт. Ты получаешь доступ ко всем учебным материалам, видишь участников и события. Когда понадобится нетворкинг, поддержка или contributions -- переходи на Pro.
 
 ## Pro
 
-Для тех, кто хочет больше практики и взаимодействия с сообществом:
+Для более активного участия в экосистеме. К Edge добавляется право предлагать события и открывается категория `usecase`.
 
-- Всё из Edge
-- Создание connect-запросов (нетворкинг)
-- Предложение событий (предложение проходит модерацию -- администратор решает)
-- Отправка contributions (скиллы, уроки, use cases)
-- Обращения в поддержку (тикеты через @EdgeLabSupportBot и API)
-- Мульти-агент сценарии
+- Scopes: `22`
+- Контент: `guide`, `lesson`, `skill`, `workshop`, `usecase`, `live`
+- Rate limit: `120/min`
+- Extras: priority support, future USECASES API
 
-### API scopes
+### Полный список scopes
 
+```text
+knowledge:read
+knowledge:write
+profile:read
+profile:write
+progress:read
+progress:write
+achievements:read
+points:read
+billing:read
+billing:write
+support:read
+support:write
+notifications:read
+notifications:write
+events:read
+events:write
+network:read
+network:write
+contributions:read
+contributions:write
+referrals:read
+referrals:write
 ```
-profile:read, profile:write, knowledge:read, events:read, network:read,
-support:write, contributions:write, events:write, network:write
-```
-
-Pro подходит, когда ты уже разобрался с основами и хочешь строить более сложных агентов, работать в связке с другими участниками и вносить вклад в экосистему.
 
 ## VIP
 
-Полный доступ ко всем функциям платформы плюс персональное сопровождение:
+VIP даёт полный контент, высокий лимит запросов и ранний доступ, но сейчас этот тариф в продажу не выдаётся.
 
-- Всё из Pro
-- **Выделенный VIP-чат с командой** -- отдельный чат, где присутствует команда EdgeLab
-- **Персональный созвон** -- один созвон в месяц (консультация от команды)
-- **Приоритетная обработка тикетов** -- тикеты VIP-участников обрабатываются в первую очередь
+- Scopes: `20`
+- Контент: полный доступ + early access
+- Rate limit: `300/min`
+- Extras: office hours, 1-on-1, early access
 
-### API scopes
+<Warning>
+VIP сейчас деактивирован: планы `vip-month` и `vip-year` помечены как `is_active=false`. В документации он оставлен как модель доступа, но оформить его сейчас нельзя.
+</Warning>
 
+### Полный список scopes
+
+```text
+knowledge:read
+knowledge:write
+profile:read
+profile:write
+progress:read
+progress:write
+achievements:read
+points:read
+billing:read
+billing:write
+support:read
+support:write
+notifications:read
+notifications:write
+events:read
+events:write
+network:read
+network:write
+contributions:read
+contributions:write
 ```
-profile:read, profile:write, knowledge:read, events:read, network:read,
-support:write, contributions:write, events:write, network:write, support:call-request
-```
 
-VIP -- для тех, кто строит агентов на профессиональном уровне и хочет персональное сопровождение.
+## Категории контента
 
-## Поддержка по тарифам
+| Категория | Free | Edge | Pro | VIP |
+|---|:---:|:---:|:---:|:---:|
+| `guide` | + | + | + | + |
+| `lesson` | -- | + | + | + |
+| `skill` | -- | + | + | + |
+| `workshop` | -- | + | + | + |
+| `usecase` | -- | -- | + | + |
+| `live` | -- | + | + | + |
 
-| Возможность | Edge | Pro | VIP |
-|---|:---:|:---:|:---:|
-| FAQ (публичный) | + | + | + |
-| Тикеты через @EdgeLabSupportBot и API | -- | + | + |
-| Приоритетная обработка тикетов | -- | -- | + |
-| Выделенный VIP-чат с командой | -- | -- | + |
-| Персональный созвон (1 в месяц) | -- | -- | + |
+## Что реально видит агент
 
-**Pro и VIP** -- обращения в поддержку через тикеты. Без разницы в приоритете между Pro и VIP при обработке тикетов (кроме VIP-приоритета).
-
-**VIP** -- дополнительно: отдельный чат с командой и один персональный созвон в месяц. Тикеты обрабатываются приоритетно.
+| Уровень | Что получает агент |
+|---|---|
+| Free | Публичный поиск по гайдам и FAQ без авторизации |
+| Edge | Полноценную личную работу: профиль, прогресс, очки, события, support, network, contributions |
+| Pro | Всё из Edge + `events:write`, категория `usecase`, priority support |
+| VIP | Всё из Pro, кроме referral scopes, плюс early access и расширенные лимиты |
 
 ## Как выбрать
 
 <AccordionGroup>
 
-<Accordion title="Я только начинаю изучать AI-агентов">
-**Edge.** Тебе хватит учебных материалов и базового API. Когда освоишься -- перейдёшь на Pro.
+<Accordion title="Мне нужно просто посмотреть, что внутри">
+Бери **Free**. Подключаешь MCP без ключа и читаешь гайды.
 </Accordion>
 
-<Accordion title="Я хочу работать вместе с другими участниками">
-**Pro.** Нетворкинг, contributions и поддержка -- ключевые функции для совместной работы.
+<Accordion title="Мне нужен рабочий доступ для себя и агента">
+Нужен **Edge**. Это первый уровень, где открывается личный контур: профиль, прогресс, support, network и contributions.
 </Accordion>
 
-<Accordion title="Я строю агентов профессионально">
-**VIP.** Полный доступ, выделенный чат с командой, персональный созвон и приоритетная поддержка.
+<Accordion title="Мне нужен максимум публичных материалов и возможность предлагать события">
+Смотри в сторону **Pro**. Он добавляет `events:write` и открывает `usecase`.
+</Accordion>
+
+<Accordion title="Почему VIP описан, но недоступен">
+Потому что модель доступа существует, но продажа этих планов сейчас выключена. Доки должны это явно отражать.
 </Accordion>
 
 </AccordionGroup>
-
-## Смена тарифа
-
-Смена тарифа доступна в настройках аккаунта на [api.edgelab.su](https://api.edgelab.su). При повышении тарифа новые scopes активируются для всех существующих API ключей автоматически.

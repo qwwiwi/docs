@@ -1,107 +1,185 @@
 ---
 title: "Быстрый старт"
-description: "Получи API ключ и сделай первый запрос к EdgeLab API за 5 минут"
+description: "Подключи EdgeLab MCP за несколько минут: без ключа для public tools или с ключом для личных tools"
 ---
 
 # Быстрый старт
 
-Этот гайд проведёт тебя от регистрации до первого успешного запроса к API. Никакого опыта с API не нужно -- просто следуй шагам.
+В EdgeLab нет REST API для агентских интеграций. Быстрый старт выглядит так: подключаешь MCP-сервер, при желании добавляешь ключ и вызываешь tools.
 
 <Steps>
 
-<Step title="Зарегистрируйся на платформе">
+<Step title="Подключись к MCP-серверу">
 
-Перейди на [api.edgelab.su](https://api.edgelab.su) и создай аккаунт. Подойдёт любой тариф -- API доступен на всех уровнях.
+Адрес один:
+
+```text
+https://mcp.edgelab.su/mcp
+```
+
+Если тебе нужны только публичные гайды и FAQ, этого уже достаточно.
 
 </Step>
 
-<Step title="Получи API ключ">
+<Step title="Выбери режим: public или personal">
 
-После регистрации зайди в настройки профиля и создай API ключ. Ключ выглядит так:
+| Режим | Что нужно | Что получаешь |
+|---|---|---|
+| Public | Ничего, даже ключ не нужен | Публичные tools и гайды |
+| Personal | Ключ от `@InvestorEdgeLabbot` | Профиль, прогресс, events, network, support, contributions и другое |
 
+Формат ключа:
+
+```text
+el_live_1a8c25f8b7165604
 ```
-edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
-```
-
-<Warning>
-Ключ показывается только один раз при создании. Сохрани его в надёжном месте. Если потеряешь -- создай новый.
-</Warning>
-
-Можно также создать ключ через сам API (см. [Auth endpoints](/api-reference/auth)), но для первого раза удобнее через веб-интерфейс.
 
 </Step>
 
-<Step title="Сделай первый запрос">
-
-Проверь, что ключ работает -- запроси информацию о себе. Выбери удобный способ:
+<Step title="Добавь конфиг в свой клиент">
 
 <CodeGroup>
-```bash curl
-curl -X GET https://api.edgelab.su/api/v1/profile/me \
-  -H "Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
-```
-
-```python Python
-import requests
-
-API_KEY = "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
-
-response = requests.get(
-    "https://api.edgelab.su/api/v1/profile/me",
-    headers={"Authorization": f"Bearer {API_KEY}"}
-)
-
-print(response.json())
-```
-</CodeGroup>
-
-</Step>
-
-<Step title="Получи ответ">
-
-Если всё правильно, ты получишь ответ вроде этого:
-
-```json
+```json Claude Desktop
 {
-  "id": 123456789,
-  "username": "example-user",
-  "display_name": "Dashi",
-  "tier": "vip",
-  "points": 0,
-  "bio": "Учусь строить AI-агентов",
-  "city": "Phuket",
-  "skills": ["crypto", "ai", "marketing"],
-  "interests": [],
-  "can_help": "AI-агенты, автоматизация",
-  "looking_for": "Новые AI-инструменты, партнёрства",
-  "work_status": "hiring",
-  "work_details": "Ищу разработчика",
-  "contacts": {"telegram": "@example-user", "website": "https://edgelab.su"},
-  "network_visible": true
+  "mcpServers": {
+    "edgelab": {
+      "url": "https://mcp.edgelab.su/mcp"
+    }
+  }
 }
 ```
 
-API вернул твой профиль: имя, тариф, поинты, навыки, контакты -- всё на месте.
+```json Cursor
+{
+  "mcpServers": {
+    "edgelab": {
+      "url": "https://mcp.edgelab.su/mcp",
+      "headers": {
+        "Authorization": "Bearer el_live_1a8c25f8b7165604"
+      }
+    }
+  }
+}
+```
+
+```json Windsurf
+{
+  "mcpServers": {
+    "edgelab": {
+      "url": "https://mcp.edgelab.su/mcp",
+      "headers": {
+        "x-api-key": "el_live_1a8c25f8b7165604"
+      }
+    }
+  }
+}
+```
+</CodeGroup>
+
+<Note>
+Если клиент не умеет кастомные заголовки прямо в конфиге, используй public-режим или локальный прокси/обёртку, которая добавляет `Authorization`/`x-api-key`.
+</Note>
+
+</Step>
+
+<Step title="Сделай первый вызов">
+
+Самый безопасный первый вызов без ключа:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "1",
+  "method": "tools/call",
+  "params": {
+    "name": "list_knowledge",
+    "arguments": {
+      "category": "guide",
+      "page": 1,
+      "per_page": 5
+    }
+  }
+}
+```
+
+Если всё подключено правильно, в ответе придёт список гайдов.
+
+</Step>
+
+<Step title="Попробуй личный tool с ключом">
+
+После регистрации у бота можно вызывать личные tools, например профиль:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "2",
+  "method": "tools/call",
+  "params": {
+    "name": "get_user_profile",
+    "arguments": {}
+  }
+}
+```
+
+Или посмотреть свой баланс поинтов:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "3",
+  "method": "tools/call",
+  "params": {
+    "name": "get_points_balance",
+    "arguments": {}
+  }
+}
+```
 
 </Step>
 
 </Steps>
 
-## Что дальше
+## Публичные tools, которые работают сразу
 
-Первый запрос работает -- отлично. Вот что можно сделать дальше:
+```text
+health
+search_knowledge
+get_knowledge
+list_knowledge
+list_categories
+get_knowledge_children
+list_recent_knowledge
+get_sections
+get_faq
+get_billing_plans
+register
+email_login
+forgot_password
+reset_password
+agent_forgot_password
+agent_reset_password
+subscribe
+resend_verify
+```
+
+## Если нужен полный доступ
+
+Регистрация и выдача ключа происходят через [@InvestorEdgeLabbot](https://t.me/InvestorEdgeLabbot). Веб-регистрации для MCP-интеграции нет.
+
+## Что дальше
 
 <CardGroup cols={2}>
   <Card title="Аутентификация" icon="key" href="/authentication">
-    Подробнее о ключах, scopes и безопасности
+    Формат ключа, scopes и лимиты
   </Card>
-  <Card title="Подключи агента" icon="plug" href="/guides/connect-agent">
-    Интегрируй API в своего AI-агента
+  <Card title="Подключить агента" icon="plug" href="/guides/connect-agent">
+    Практический гайд по MCP-подключению
   </Card>
-  <Card title="API Reference" icon="book" href="/api-reference/introduction">
-    Все endpoints с примерами
+  <Card title="Обзор MCP tools" icon="book" href="/api-reference/introduction">
+    Какие tools есть и что они делают
   </Card>
   <Card title="Безопасность ключей" icon="lock" href="/guides/api-key-security">
-    Как хранить ключи правильно
+    Как хранить и ротировать ключи
   </Card>
 </CardGroup>

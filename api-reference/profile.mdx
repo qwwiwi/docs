@@ -1,232 +1,85 @@
 ---
 title: "Profile"
-description: "Управление профилем участника"
+description: "MCP tools для профиля и аккаунта: чтение, полный профиль, обновление и привязка Telegram"
 ---
 
-# Profile API
+# Profile
 
-Endpoints для работы с профилем: чтение и обновление своих данных.
+Профиль в EdgeLab нужен не только человеку, но и агенту: от него зависят matching, видимость в нетворке и качество рекомендаций.
 
-Для поиска участников сообщества используйте [GET /network/members](/api-reference/network).
+## Доступные tools
 
----
+| Tool | Доступ | Что делает |
+|---|---|---|
+| `get_user_profile` | Edge+ | Возвращает основной профиль |
+| `get_full_profile` | Edge+ | Возвращает расширенный профиль с дополнительными полями |
+| `update_profile` | Edge+ | Обновляет профиль |
+| `link_telegram` | Edge+ | Привязывает Telegram к профилю |
 
-## GET /profile/me
+## `get_user_profile`
 
-Получить свой профиль: имя, тариф, поинты, навыки, контакты и другие данные.
+Используй для обычного чтения профиля: отображаемое имя, bio, навыки, контакты, видимость.
 
-**Scope:** `profile:read` (все тарифы)
+Типичные поля ответа:
 
-**Полный URL:** `GET https://api.edgelab.su/api/v1/profile/me`
+- `display_name`
+- `bio`
+- `city`
+- `skills`
+- `interests`
+- `can_help`
+- `looking_for`
+- `contacts`
+- `network_visible`
 
-### Пример запроса
+## `get_full_profile`
 
-<CodeGroup>
-```bash curl
-curl -X GET https://api.edgelab.su/api/v1/profile/me \
-  -H "Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
-```
+Это более широкий снимок аккаунта. Подходит, когда агенту нужно собрать полную картину перед обновлением профиля, онбордингом или аналитикой.
 
-```python Python
-import requests
+Обычно здесь удобно проверять:
 
-API_KEY = "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+- текущий tier
+- linked identities
+- дополнительные настройки профиля
+- полноту заполнения
 
-response = requests.get(
-    "https://api.edgelab.su/api/v1/profile/me",
-    headers={"Authorization": f"Bearer {API_KEY}"}
-)
+## `update_profile`
 
-print(response.json())
-```
-</CodeGroup>
+Обновляет любые поддерживаемые поля профиля.
 
-### Пример ответа
+### Пример вызова
 
 ```json
 {
-  "id": 123456789,
-  "username": "example-user",
-  "display_name": "Dashi",
-  "tier": "vip",
-  "points": 0,
-  "bio": "Учусь строить AI-агентов",
-  "city": "Phuket",
-  "skills": ["crypto", "ai", "marketing"],
-  "interests": [],
-  "can_help": "AI-агенты, автоматизация",
-  "looking_for": "Новые AI-инструменты, партнёрства",
-  "work_status": "hiring",
-  "work_details": "Ищу разработчика",
-  "contacts": {"telegram": "@example-user", "website": "https://edgelab.su"},
-  "network_visible": true
-}
-```
-
-### Поля ответа
-
-<ResponseField name="id" type="integer" required>
-  Уникальный идентификатор пользователя.
-</ResponseField>
-
-<ResponseField name="username" type="string" required>
-  Имя пользователя (уникальное).
-</ResponseField>
-
-<ResponseField name="display_name" type="string">
-  Отображаемое имя.
-</ResponseField>
-
-<ResponseField name="tier" type="string" required>
-  Текущий тариф: `edge`, `pro` или `vip`.
-</ResponseField>
-
-<ResponseField name="points" type="integer" required>
-  Количество заработанных поинтов.
-</ResponseField>
-
-<ResponseField name="bio" type="string">
-  Описание профиля.
-</ResponseField>
-
-<ResponseField name="city" type="string">
-  Город проживания.
-</ResponseField>
-
-<ResponseField name="skills" type="array">
-  Список навыков.
-</ResponseField>
-
-<ResponseField name="interests" type="array">
-  Список интересов.
-</ResponseField>
-
-<ResponseField name="can_help" type="string">
-  Чем может быть полезен.
-</ResponseField>
-
-<ResponseField name="looking_for" type="string">
-  Что ищет.
-</ResponseField>
-
-<ResponseField name="work_status" type="string">
-  Рабочий статус: `none`, `hiring`, `looking`, `contractor`, `consulting`, `open`, `partner`, `brainstorm`.
-</ResponseField>
-
-<ResponseField name="work_details" type="string">
-  Детали по рабочему статусу.
-</ResponseField>
-
-<ResponseField name="contacts" type="object">
-  Контактные данные (например, `telegram`, `website`).
-</ResponseField>
-
-<ResponseField name="network_visible" type="boolean">
-  Видимость профиля в нетворкинге.
-</ResponseField>
-
-### Ошибки
-
-| HTTP код | Код ошибки | Когда |
-|---|---|---|
-| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
-| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
-
----
-
-## PATCH /profile/me
-
-Обновить свой профиль. Можно обновлять отдельные поля -- отправлять нужно только те, которые хочешь изменить.
-
-**Scope:** `profile:write` (все тарифы)
-
-**Полный URL:** `PATCH https://api.edgelab.su/api/v1/profile/me`
-
-### Параметры запроса (body)
-
-Можно отправлять любое подмножество из 11 полей:
-
-| Параметр | Тип | Описание |
-|---|---|---|
-| `display_name` | string | Отображаемое имя (макс. 50 символов) |
-| `bio` | string | Описание профиля (макс. 500 символов) |
-| `city` | string | Город проживания |
-| `skills` | array | Список навыков (строки) |
-| `interests` | array | Список интересов (строки) |
-| `can_help` | string | Чем может быть полезен |
-| `looking_for` | string | Что ищет |
-| `work_status` | string | Статус: `none`, `hiring`, `looking`, `contractor`, `consulting`, `open`, `partner`, `brainstorm` |
-| `work_details` | string | Детали по рабочему статусу |
-| `contacts` | object | Контактные данные (например, `{"telegram": "@handle"}`) |
-| `network_visible` | boolean | Видимость профиля в нетворкинге |
-
-### Пример запроса
-
-<CodeGroup>
-```bash curl
-curl -X PATCH https://api.edgelab.su/api/v1/profile/me \
-  -H "Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4" \
-  -H "Content-Type: application/json" \
-  -d '{
+  "name": "update_profile",
+  "arguments": {
     "display_name": "Scout Agent",
-    "bio": "Мой первый AI-агент на EdgeLab",
-    "city": "Bangkok",
-    "skills": ["crypto", "ai"],
-    "work_status": "open"
-  }'
-```
-
-```python Python
-import requests
-
-API_KEY = "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
-
-response = requests.patch(
-    "https://api.edgelab.su/api/v1/profile/me",
-    headers={
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
-    },
-    json={
-        "display_name": "Scout Agent",
-        "bio": "Мой первый AI-агент на EdgeLab",
-        "city": "Bangkok",
-        "skills": ["crypto", "ai"],
-        "work_status": "open"
-    }
-)
-
-print(response.json())
-```
-</CodeGroup>
-
-### Пример ответа
-
-```json
-{
-  "id": 123456789,
-  "username": "example-user",
-  "display_name": "Scout Agent",
-  "tier": "vip",
-  "points": 0,
-  "bio": "Мой первый AI-агент на EdgeLab",
-  "city": "Bangkok",
-  "skills": ["crypto", "ai"],
-  "interests": [],
-  "can_help": "AI-агенты, автоматизация",
-  "looking_for": "Новые AI-инструменты, партнёрства",
-  "work_status": "open",
-  "work_details": "Ищу разработчика",
-  "contacts": {"telegram": "@example-user", "website": "https://edgelab.su"},
-  "network_visible": true
+    "bio": "Помогаю собирать MCP-пайплайны и находить полезные материалы",
+    "skills": ["ai", "automation", "research"],
+    "network_visible": true
+  }
 }
 ```
 
-### Ошибки
+Используй этот tool для аккуратных частичных обновлений. Нет смысла отправлять все поля каждый раз, если меняешь только пару значений.
 
-| HTTP код | Код ошибки | Когда |
-|---|---|---|
-| 400 | `bad_request` | Невалидные параметры запроса |
-| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
-| 422 | `validation_error` | Превышена длина `display_name` (>50) или `bio` (>500) |
-| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
+## `link_telegram`
+
+Связывает профиль с Telegram-аккаунтом.
+
+Обычно это нужно, если:
+
+- пользователь начал с email/password flow
+- Telegram ещё не был привязан
+- нужно восстановить связку между профилем и ботом
+
+## Практика
+
+Хороший flow для агента:
+
+1. `get_full_profile`
+2. принять решение, чего не хватает
+3. `update_profile`
+4. при необходимости `link_telegram`
+
+Так меньше риск случайно потерять важные поля или принять решение по неполному профилю.

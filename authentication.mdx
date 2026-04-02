@@ -1,127 +1,203 @@
 ---
 title: "Аутентификация"
-description: "API ключи, JWT, scopes, ротация и безопасность доступа к EdgeLab API"
+description: "API-ключи, scopes, rate limits и правила доступа к EdgeLab MCP"
 ---
 
 # Аутентификация
 
-Все запросы к EdgeLab API требуют аутентификации. Поддерживаются два метода:
+EdgeLab использует MCP, а не REST. Подключение идёт к `https://mcp.edgelab.su/mcp`, а доступ управляется API-ключом формата `el_live_...`.
 
-## Методы аутентификации
+## Как работает доступ
 
-### JWT -- для пользователей
-
-JWT-токен используется для web-сессий через платформу. Пользователь авторизуется на [api.edgelab.su](https://api.edgelab.su), получает JWT и использует его для запросов из браузера.
-
-- Автоматически выдаётся при авторизации через веб-интерфейс
-- Срок действия ограничен сессией
-- Содержит информацию о тарифе и scopes пользователя
-
-### API Key -- для агентов
-
-API ключ используется для программного доступа -- AI-агенты, скрипты, интеграции. Передаётся в заголовке `Authorization`:
-
-```
-Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
-```
-
-Управление API ключами -- через [API Keys endpoints](/api-reference/auth).
+- Публичные tools можно вызывать без ключа
+- Личные tools требуют API-ключ
+- Ключ передаётся в заголовке `Authorization: Bearer ...` или `x-api-key`
+- JWT для MCP не используется
 
 <Warning>
-Никогда не передавай ключ в URL (query parameters). Используй только заголовок `Authorization`.
+Если в старых заметках у тебя встречается `edgelab_live_...`, это устаревший формат. Текущий префикс только `el_live_`.
 </Warning>
 
-## API ключи
+## Формат ключа
 
-### Формат ключа
+API-ключ выглядит так:
 
-API ключ состоит из префикса `edgelab_live_` и 32 шестнадцатеричных символов. Общая длина -- 45 символов.
-
-```
-edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
+```text
+el_live_1a8c25f8b7165604
 ```
 
-### Ограничения
+Правила:
 
-- Максимум **3 активных ключа** на аккаунт одновременно
-- Каждый ключ имеет набор scopes, определяемый тарифом
-- Ключ показывается полностью только при создании -- потом доступен только префикс
+- Префикс: `el_live_`
+- Хвост: `16` hex-символов
+- Общая длина: `24` символа
 
-## Scopes
+## Где получить ключ
 
-Scopes определяют, какие операции доступны с данным ключом. Набор scopes зависит от тарифа.
+Ключ создаётся через Telegram-бота [@InvestorEdgeLabbot](https://t.me/InvestorEdgeLabbot).
 
-| Scope | Edge | Pro | VIP |
-|-------|------|-----|-----|
-| `profile:read` | да | да | да |
-| `profile:write` | да | да | да |
-| `knowledge:read` | да | да | да |
-| `events:read` | да | да | да |
-| `network:read` | да | да | да |
-| `support:write` | -- | да | да |
-| `contributions:write` | -- | да | да |
-| `events:write` | -- | да | да |
-| `network:write` | -- | да | да |
+Схема простая:
 
-VIP дополнительно: `support:call-request`
-
-**Edge** = читает всё, пишет только профиль.
-**Pro / VIP** = полный доступ.
-**VIP** = + запрос персонального созвона.
-
-## Создание ключа
-
-Ключ можно создать двумя способами:
-
-1. **Через веб-интерфейс** -- в настройках профиля на [api.edgelab.su](https://api.edgelab.su)
-2. **Через API** -- endpoint `POST /api/v1/auth/keys` (см. [API Keys](/api-reference/auth))
+1. Регистрируешься через бота
+2. Бот создаёт аккаунт и связывает `telegram_id` с профилем
+3. Бот отправляет API-ключ
+4. Этот ключ используешь в MCP-клиенте или своём агенте
 
 <Note>
-Для первого ключа используй веб-интерфейс. Через API можно создавать дополнительные ключи, уже имея действующий.
+Веб-регистрации на `api.edgelab.su` для MCP нет. Это старая модель, её не используй.
 </Note>
 
-## Ротация ключей
+## Заголовки авторизации
 
-Ротация -- это замена старого ключа на новый за одну операцию. Старый ключ немедленно перестаёт работать, новый начинает.
+<CodeGroup>
+```http Authorization
+Authorization: Bearer el_live_1a8c25f8b7165604
+```
 
-Зачем ротировать:
-- Ключ мог утечь (попал в лог, в git, показал на экране)
-- Регулярная ротация как мера безопасности
-- Разграничение доступа между агентами
+```http x-api-key
+x-api-key: el_live_1a8c25f8b7165604
+```
+</CodeGroup>
 
-Ротация выполняется через `POST /api/v1/auth/keys/rotate` с указанием префикса ключа, который нужно заменить.
+Оба варианта валидны. Обычно удобнее `Authorization: Bearer ...`.
 
-Подробности -- в разделе [API Keys](/api-reference/auth).
+## Scopes по тарифам
 
-## Отзыв ключа
+| Тариф | Scopes | Что это значит |
+|---|---:|---|
+| Free | 1 | Только `knowledge:read` и публичные гайды |
+| Edge | 21 | Полный личный контур: профиль, прогресс, points, support, notifications, events, network, contributions, referrals |
+| Pro | 22 | Всё из Edge + `events:write` |
+| VIP | 20 | Всё из Pro, кроме `referrals:read` и `referrals:write` |
 
-Если ключ скомпрометирован -- отзови его немедленно через `POST /api/v1/auth/keys/revoke`. Отозванный ключ перестаёт работать мгновенно и не подлежит восстановлению.
+### Free
+
+```text
+knowledge:read
+```
+
+### Edge
+
+```text
+knowledge:read
+knowledge:write
+profile:read
+profile:write
+progress:read
+progress:write
+achievements:read
+points:read
+billing:read
+billing:write
+support:read
+support:write
+notifications:read
+notifications:write
+events:read
+network:read
+network:write
+contributions:read
+contributions:write
+referrals:read
+referrals:write
+```
+
+### Pro
+
+```text
+knowledge:read
+knowledge:write
+profile:read
+profile:write
+progress:read
+progress:write
+achievements:read
+points:read
+billing:read
+billing:write
+support:read
+support:write
+notifications:read
+notifications:write
+events:read
+events:write
+network:read
+network:write
+contributions:read
+contributions:write
+referrals:read
+referrals:write
+```
+
+### VIP
+
+```text
+knowledge:read
+knowledge:write
+profile:read
+profile:write
+progress:read
+progress:write
+achievements:read
+points:read
+billing:read
+billing:write
+support:read
+support:write
+notifications:read
+notifications:write
+events:read
+events:write
+network:read
+network:write
+contributions:read
+contributions:write
+```
 
 ## Rate limits
 
-API ограничивает количество запросов: **60 запросов в минуту** на один API ключ.
+| Тариф | Лимит |
+|---|---:|
+| Free | `30/min` |
+| Edge | `60/min` |
+| Pro | `120/min` |
+| VIP | `300/min` |
 
-При превышении лимита API вернёт ошибку `429 Too Many Requests` с заголовком `Retry-After`, указывающим сколько секунд ждать.
+Если лимит превышен, MCP-сервер вернёт ошибку `rate_limit_exceeded`. Для циклов и cron-процессов добавь backoff и паузы между вызовами.
 
-```json
-{
-  "error": {
-    "code": "rate_limit_exceeded",
-    "message": "Превышен лимит запросов. Попробуй через 30 секунд."
-  }
-}
+## Что доступно без ключа
+
+Публичный набор tools:
+
+```text
+health
+search_knowledge
+get_knowledge
+list_knowledge
+list_categories
+get_knowledge_children
+list_recent_knowledge
+get_sections
+get_faq
+get_billing_plans
+register
+email_login
+forgot_password
+reset_password
+agent_forgot_password
+agent_reset_password
+subscribe
+resend_verify
 ```
 
-<Tip>
-60 запросов в минуту -- это один запрос в секунду. Для большинства агентов этого более чем достаточно. Если твой агент делает запросы в цикле -- добавь паузу между запросами.
-</Tip>
+## Что доступно с ключом
 
-## Безопасность
+С ключом открываются личные и социальные tools: профиль, прогресс, achievements, points, subscriptions, auth, events, network, contributions, support, notifications и admin-инструменты для нужных ролей.
 
-Подробное руководство по хранению и защите ключей -- в разделе [Безопасность API ключей](/guides/api-key-security).
+## Практические правила
 
-Коротко:
-- Храни ключи в переменных окружения или в файле `.secrets/`
-- Никогда не коммить ключи в git
-- Ротируй ключи при любом подозрении на утечку
-- Используй минимально необходимый набор scopes
+- Не вставляй ключ в URL
+- Не коммить ключ в git
+- Для каждого агента лучше держать отдельный ключ
+- Если ключ засветился, ротируй или удаляй его через auth tools
+- Если нужен только публичный поиск по гайдам, ключ вообще не обязателен

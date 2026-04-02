@@ -1,333 +1,127 @@
 ---
 title: "API Keys"
-description: "Управление API ключами: создание, ротация, отзыв и просмотр информации"
+description: "MCP tools для авторизации и управления API-ключами: создание, список, ротация, удаление и проверка текущего ключа"
 ---
 
 # API Keys
 
-Endpoints для управления API ключами. Позволяют создавать новые ключи, ротировать существующие, отзывать скомпрометированные и просматривать информацию о текущем ключе.
+Раздел про auth tools. Здесь больше нет REST endpoint'ов `/auth/...`. Всё делается через MCP tools.
 
----
+## Доступные tools
 
-## POST /auth/keys
+| Tool | Доступ | Что делает |
+|---|---|---|
+| `get_auth_me` | Edge+ | Показывает, какой ключ сейчас используется и какие у него scopes |
+| `create_api_key` | Edge+ | Создаёт новый ключ |
+| `list_api_keys` | Edge+ | Возвращает список активных ключей |
+| `rotate_api_key` | Edge+ | Меняет старый ключ на новый |
+| `delete_api_key` | Edge+ | Удаляет ключ |
 
-Создать новый API ключ. Максимум 3 активных ключа на аккаунт.
+<Info>
+Формат ключа всегда такой: `el_live_1a8c25f8b7165604`
+</Info>
 
-**Scope:** доступно на всех тарифах
+## `create_api_key`
 
-**Полный URL:** `POST https://api.edgelab.su/api/v1/auth/keys`
+Создаёт новый ключ для агента или отдельного runtime.
 
-### Параметры запроса (body)
+### Аргументы
 
-| Параметр | Тип | Обязательный | Описание |
+| Поле | Тип | Обязательно | Описание |
 |---|---|---|---|
-| `name` | string | Нет | Человекочитаемое имя ключа (например, «Агент-скаут») |
+| `name` | string | нет | Человеческое имя ключа |
 
-### Пример запроса
-
-<CodeGroup>
-```bash curl
-curl -X POST https://api.edgelab.su/api/v1/auth/keys \
-  -H "Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Мой второй агент"}'
-```
-
-```python Python
-import requests
-
-API_KEY = "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
-
-response = requests.post(
-    "https://api.edgelab.su/api/v1/auth/keys",
-    headers={
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
-    },
-    json={"name": "Мой второй агент"}
-)
-
-data = response.json()
-print(data)
-```
-</CodeGroup>
-
-### Пример ответа (201 Created)
+### Пример вызова
 
 ```json
 {
-  "key": "edgelab_live_f9e8d7c6b5a4f9e8d7c6b5a4f9e8d7c6",
-  "prefix": "edgelab_live_f9e8d7c6",
-  "name": "Мой второй агент",
-  "scopes": ["profile:read", "profile:write", "knowledge:read", "events:read", "network:read"],
-  "created_at": "2025-03-15T12:00:00Z"
+  "name": "create_api_key",
+  "arguments": {
+    "name": "Scout agent"
+  }
 }
 ```
+
+### Что вернётся
+
+- полный новый ключ
+- его prefix
+- дата создания
+- scopes, унаследованные от текущего тарифа
 
 <Warning>
-Полный ключ (`key`) возвращается **только в этом ответе**. Сохрани его сразу -- повторно получить полный ключ невозможно.
+Полный ключ показывается только в момент создания. Потом ты увидишь только prefix и метаданные.
 </Warning>
 
-### Ошибки
+## `list_api_keys`
 
-| HTTP код | Код ошибки | Когда |
-|---|---|---|
-| 400 | `bad_request` | Невалидные параметры запроса |
-| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
-| 403 | `forbidden` | Недостаточно прав |
-| 409 | `conflict` | Уже есть 3 активных ключа. Отзови один перед созданием нового |
-| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
+Возвращает все активные ключи текущего пользователя.
 
----
+### Что удобно смотреть
 
-## GET /auth/keys
+- `prefix`
+- `name`
+- `created_at`
+- `last_used_at`
+- `scopes`
 
-Получить список своих API ключей. Возвращает только префиксы -- полные ключи не хранятся.
+Используй этот tool для регулярного аудита: если видишь неожиданный `last_used_at`, это повод проверить, не утёк ли ключ.
 
-**Scope:** доступно на всех тарифах
+## `rotate_api_key`
 
-**Полный URL:** `GET https://api.edgelab.su/api/v1/auth/keys`
+Ротация заменяет старый ключ на новый за один вызов.
 
-### Пример запроса
+### Аргументы
 
-<CodeGroup>
-```bash curl
-curl -X GET https://api.edgelab.su/api/v1/auth/keys \
-  -H "Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
-```
-
-```python Python
-import requests
-
-API_KEY = "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
-
-response = requests.get(
-    "https://api.edgelab.su/api/v1/auth/keys",
-    headers={"Authorization": f"Bearer {API_KEY}"}
-)
-
-print(response.json())
-```
-</CodeGroup>
-
-### Пример ответа
-
-```json
-{
-  "items": [
-    {
-      "prefix": "edgelab_live_a1b2c3d4",
-      "name": "Основной агент",
-      "scopes": ["profile:read", "profile:write", "knowledge:read", "events:read", "network:read"],
-      "created_at": "2025-01-10T08:00:00Z",
-      "last_used_at": "2025-03-15T14:30:00Z"
-    },
-    {
-      "prefix": "edgelab_live_f9e8d7c6",
-      "name": "Мой второй агент",
-      "scopes": ["profile:read", "profile:write", "knowledge:read", "events:read", "network:read"],
-      "created_at": "2025-03-15T12:00:00Z",
-      "last_used_at": null
-    }
-  ],
-  "total": 2,
-  "limit": 20,
-  "offset": 0,
-  "has_more": false
-}
-```
-
-### Ошибки
-
-| HTTP код | Код ошибки | Когда |
-|---|---|---|
-| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
-| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
-
----
-
-## POST /auth/keys/rotate
-
-Ротация ключа -- замена старого на новый. Старый ключ моментально перестаёт работать.
-
-**Scope:** доступно на всех тарифах
-
-**Полный URL:** `POST https://api.edgelab.su/api/v1/auth/keys/rotate`
-
-### Параметры запроса (body)
-
-| Параметр | Тип | Обязательный | Описание |
+| Поле | Тип | Обязательно | Описание |
 |---|---|---|---|
-| `prefix` | string | Да | Префикс ключа, который нужно заменить |
+| `prefix` | string | да | Prefix ключа, который нужно заменить |
 
-### Пример запроса
-
-<CodeGroup>
-```bash curl
-curl -X POST https://api.edgelab.su/api/v1/auth/keys/rotate \
-  -H "Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4" \
-  -H "Content-Type: application/json" \
-  -d '{"prefix": "edgelab_live_f9e8d7c6"}'
-```
-
-```python Python
-import requests
-
-API_KEY = "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
-
-response = requests.post(
-    "https://api.edgelab.su/api/v1/auth/keys/rotate",
-    headers={
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
-    },
-    json={"prefix": "edgelab_live_f9e8d7c6"}
-)
-
-data = response.json()
-print(data)
-```
-</CodeGroup>
-
-### Пример ответа
+### Пример вызова
 
 ```json
 {
-  "old_prefix": "edgelab_live_f9e8d7c6",
-  "new_key": "edgelab_live_1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d",
-  "new_prefix": "edgelab_live_1a2b3c4d",
-  "rotated_at": "2025-03-15T15:00:00Z"
+  "name": "rotate_api_key",
+  "arguments": {
+    "prefix": "el_live_1a8c25f8"
+  }
 }
 ```
 
-<Warning>
-После ротации старый ключ **немедленно** перестаёт работать. Обнови ключ во всех агентах, которые его используют.
-</Warning>
+### Что важно помнить
 
-### Ошибки
+- старый ключ перестаёт работать сразу
+- новый ключ нужно сразу разнести по агентам и конфигам
 
-| HTTP код | Код ошибки | Когда |
-|---|---|---|
-| 400 | `bad_request` | Невалидный префикс |
-| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
-| 404 | `not_found` | Ключ с указанным префиксом не найден |
-| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
+## `delete_api_key`
 
----
+Удаляет ключ без ротации.
 
-## POST /auth/keys/revoke
+### Аргументы
 
-Отзыв (деактивация) ключа. Отозванный ключ перестаёт работать мгновенно и не может быть восстановлен.
-
-**Scope:** доступно на всех тарифах
-
-**Полный URL:** `POST https://api.edgelab.su/api/v1/auth/keys/revoke`
-
-### Параметры запроса (body)
-
-| Параметр | Тип | Обязательный | Описание |
+| Поле | Тип | Обязательно | Описание |
 |---|---|---|---|
-| `prefix` | string | Да | Префикс ключа, который нужно отозвать |
+| `prefix` | string | да | Prefix ключа, который нужно удалить |
 
-### Пример запроса
+Используй `delete_api_key`, если ключ больше не нужен или уже скомпрометирован.
 
-<CodeGroup>
-```bash curl
-curl -X POST https://api.edgelab.su/api/v1/auth/keys/revoke \
-  -H "Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4" \
-  -H "Content-Type: application/json" \
-  -d '{"prefix": "edgelab_live_f9e8d7c6"}'
-```
+## `get_auth_me`
 
-```python Python
-import requests
+Показывает контекст текущей авторизации:
 
-API_KEY = "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+- кто владелец ключа
+- какой тариф активен
+- какие scopes реально доступны
+- какой prefix используется
 
-response = requests.post(
-    "https://api.edgelab.su/api/v1/auth/keys/revoke",
-    headers={
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
-    },
-    json={"prefix": "edgelab_live_f9e8d7c6"}
-)
+Это удобный диагностический вызов после подключения нового MCP-клиента.
 
-print(response.json())
-```
-</CodeGroup>
+## Практика
 
-### Пример ответа
+Рекомендованный цикл для нормальной эксплуатации:
 
-```json
-{
-  "prefix": "edgelab_live_f9e8d7c6",
-  "revoked_at": "2025-03-15T16:00:00Z"
-}
-```
-
-<Note>
-Нельзя отозвать ключ, которым ты аутентифицирован в текущем запросе. Используй другой ключ для отзыва.
-</Note>
-
-### Ошибки
-
-| HTTP код | Код ошибки | Когда |
-|---|---|---|
-| 400 | `bad_request` | Невалидный префикс или попытка отозвать текущий ключ |
-| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
-| 404 | `not_found` | Ключ с указанным префиксом не найден |
-| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
-
----
-
-## GET /auth/me
-
-Информация о текущем API ключе: его scopes, владелец, когда создан.
-
-**Scope:** доступно на всех тарифах
-
-**Полный URL:** `GET https://api.edgelab.su/api/v1/auth/me`
-
-### Пример запроса
-
-<CodeGroup>
-```bash curl
-curl -X GET https://api.edgelab.su/api/v1/auth/me \
-  -H "Authorization: Bearer edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
-```
-
-```python Python
-import requests
-
-API_KEY = "edgelab_live_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
-
-response = requests.get(
-    "https://api.edgelab.su/api/v1/auth/me",
-    headers={"Authorization": f"Bearer {API_KEY}"}
-)
-
-print(response.json())
-```
-</CodeGroup>
-
-### Пример ответа
-
-```json
-{
-  "prefix": "edgelab_live_a1b2c3d4",
-  "name": "Основной агент",
-  "owner_name": "myagent",
-  "tier": "edge",
-  "scopes": ["profile:read", "profile:write", "knowledge:read", "events:read", "network:read"],
-  "created_at": "2025-01-10T08:00:00Z",
-  "last_used_at": "2025-03-15T14:30:00Z"
-}
-```
-
-### Ошибки
-
-| HTTP код | Код ошибки | Когда |
-|---|---|---|
-| 401 | `unauthorized` | Невалидный или отсутствующий API-ключ |
-| 429 | `rate_limit_exceeded` | Превышен лимит запросов |
+1. `create_api_key` для каждого отдельного агента
+2. `list_api_keys` для периодического аудита
+3. `rotate_api_key`, если ключ засветился
+4. `delete_api_key`, если ключ больше не нужен
+5. `get_auth_me`, если нужно быстро проверить текущий контекст
