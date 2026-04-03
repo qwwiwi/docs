@@ -9,80 +9,72 @@ description: "Практический гайд по подключению аг
 
 ## Что понадобится
 
-- MCP-клиент: Claude Desktop, Cursor, Windsurf или свой runtime
-- Ключ `el_live_...`, если нужны личные tools
-- Telegram-бот [@InvestorEdgeLabbot](https://t.me/InvestorEdgeLabbot), если нужен personal-доступ
+- MCP-клиент: Claude Code, Claude Desktop, Cursor, Windsurf или свой runtime
+- Telegram-бот [@InvestorEdgeLabbot](https://t.me/InvestorEdgeLabbot) — для регистрации и получения ключа
+- Ключ `el_live_...` или OAuth через Telegram — для личных tools
+
+## Два пути авторизации
+
+| Путь | Для кого | Как работает |
+|---|---|---|
+| **OAuth через Telegram** | Claude Code и клиенты без заголовков | Автоматически при первом запросе. Подтверждение в Telegram-боте |
+| **API-ключ** | Claude Desktop, Cursor, Windsurf | Ключ от бота → в заголовок конфига |
+
+<Tip>
+Claude Code поддерживает OAuth — ключ не нужен. Просто подключи MCP и подтверди через Telegram при первом запросе.
+</Tip>
 
 ## Схема доступа
 
-| Уровень | Нужен ключ | Что получает агент |
+| Уровень | Нужен ключ/OAuth | Что получает агент |
 |---|:---:|---|
 | Free | -- | Публичные guides и FAQ |
 | Edge | + | Профиль, прогресс, achievements, points, billing, support, notifications, events, network, contributions, referrals |
 | Pro | + | Всё из Edge + `events:write`, usecases, priority support |
 | VIP | + | Всё из Pro без referrals, но с большими лимитами и early access |
 
-<Warning>
-VIP сейчас описан как модель доступа, но сами планы выключены. Не обещай пользователям, что его можно оформить прямо сейчас.
-</Warning>
-
 ## Шаг за шагом
 
 <Steps>
-
-<Step title="Получи ключ, если нужен личный контур">
-
-Ключ выдаёт бот [@InvestorEdgeLabbot](https://t.me/InvestorEdgeLabbot). Формат всегда такой:
-
-```text
-el_live_1a8c25f8b7165604
-```
-
-Если тебе нужен только публичный поиск по гайдам, этот шаг можно пропустить.
-
-</Step>
 
 <Step title="Добавь MCP-конфиг">
 
 <CodeGroup>
 ```bash Claude Code (CLI)
 claude mcp add edgelab-mcp --transport http https://mcp.edgelab.su/mcp
-# OAuth flow запустится автоматически при первом вызове
 ```
 
-```json Claude Desktop
+```json Claude Code (конфиг)
+{
+  "mcpServers": {
+    "edgelab": {
+      "type": "streamable-http",
+      "url": "https://mcp.edgelab.su/mcp"
+    }
+  }
+}
+```
+
+```json Claude Desktop (с ключом)
 {
   "mcpServers": {
     "edgelab": {
       "url": "https://mcp.edgelab.su/mcp",
       "headers": {
-        "Authorization": "Bearer el_live_1a8c25f8b7165604"
+        "Authorization": "Bearer el_live_ваш_ключ"
       }
     }
   }
 }
 ```
 
-```json Cursor
+```json Cursor / Windsurf (с ключом)
 {
   "mcpServers": {
     "edgelab": {
       "url": "https://mcp.edgelab.su/mcp",
       "headers": {
-        "x-api-key": "el_live_1a8c25f8b7165604"
-      }
-    }
-  }
-}
-```
-
-```json Windsurf
-{
-  "mcpServers": {
-    "edgelab": {
-      "url": "https://mcp.edgelab.su/mcp",
-      "headers": {
-        "Authorization": "Bearer el_live_1a8c25f8b7165604"
+        "x-api-key": "el_live_ваш_ключ"
       }
     }
   }
@@ -92,36 +84,36 @@ claude mcp add edgelab-mcp --transport http https://mcp.edgelab.su/mcp
 
 </Step>
 
+<Step title="Авторизуйся">
+
+**Claude Code (OAuth через Telegram):**
+При первом вызове tool откроется браузер → страница с кнопкой «Открыть Telegram» → подтверди в боте → готово. [Подробнее](/guides/oauth-connect)
+
+**Остальные клиенты (API-ключ):**
+Открой [@InvestorEdgeLabbot](https://t.me/InvestorEdgeLabbot) → START → бот выдаст ключ → добавь в конфиг.
+
+</Step>
+
 <Step title="Проверь public tools">
 
 Самый простой smoke test:
 
 ```json
 {
-  "jsonrpc": "2.0",
-  "id": "health-1",
-  "method": "tools/call",
-  "params": {
-    "name": "health",
-    "arguments": {}
-  }
+  "name": "health",
+  "arguments": {}
 }
 ```
 
-После этого попробуй:
+Затем:
 
 ```json
 {
-  "jsonrpc": "2.0",
-  "id": "list-1",
-  "method": "tools/call",
-  "params": {
-    "name": "list_knowledge",
-    "arguments": {
-      "category": "guide",
-      "page": 1,
-      "per_page": 3
-    }
+  "name": "list_knowledge",
+  "arguments": {
+    "category": "guide",
+    "page": 1,
+    "per_page": 3
   }
 }
 ```
@@ -130,17 +122,12 @@ claude mcp add edgelab-mcp --transport http https://mcp.edgelab.su/mcp
 
 <Step title="Проверь personal tools">
 
-Когда ключ добавлен, вызови что-то из личного контура:
+После авторизации вызови что-то из личного контура:
 
 ```json
 {
-  "jsonrpc": "2.0",
-  "id": "profile-1",
-  "method": "tools/call",
-  "params": {
-    "name": "get_user_profile",
-    "arguments": {}
-  }
+  "name": "get_user_profile",
+  "arguments": {}
 }
 ```
 
@@ -148,13 +135,8 @@ claude mcp add edgelab-mcp --transport http https://mcp.edgelab.su/mcp
 
 ```json
 {
-  "jsonrpc": "2.0",
-  "id": "dash-1",
-  "method": "tools/call",
-  "params": {
-    "name": "get_dashboard",
-    "arguments": {}
-  }
+  "name": "get_dashboard",
+  "arguments": {}
 }
 ```
 
@@ -167,60 +149,37 @@ claude mcp add edgelab-mcp --transport http https://mcp.edgelab.su/mcp
 ### Knowledge
 
 ```text
-search_knowledge
-get_knowledge
-list_knowledge
-list_categories
-get_knowledge_children
-list_recent_knowledge
-get_sections
+search_knowledge, get_knowledge, list_knowledge
+list_categories, get_knowledge_children
+list_recent_knowledge, get_sections
 ```
 
 ### Profile и progress
 
 ```text
-get_user_profile
-get_full_profile
-update_profile
-link_telegram
-track_progress
-get_progress
-get_progress_history
+get_user_profile, get_full_profile, update_profile
+link_telegram, track_progress, get_progress, get_progress_history
 ```
 
 ### Events
 
 ```text
-list_events
-get_event
-get_event_calendar
-rsvp_event
-cancel_rsvp
-propose_event
-list_proposals
+list_events, get_event, get_event_calendar
+rsvp_event, cancel_rsvp, propose_event, list_proposals
 ```
 
 ### Network
 
 ```text
-list_members
-search_members
-get_matches
-list_connect_requests
-send_connect_request
-respond_connect_request
+list_members, search_members, get_matches
+list_connect_requests, send_connect_request, respond_connect_request
 ```
 
 ### Support и notifications
 
 ```text
-create_ticket
-list_tickets
-get_ticket
-send_ticket_message
-list_notifications
-mark_notification_read
-get_unread_count
+create_ticket, list_tickets, get_ticket, send_ticket_message
+list_notifications, mark_notification_read, get_unread_count
 ```
 
 ## Рабочий паттерн агента
@@ -235,34 +194,24 @@ get_unread_count
 
 ## Cron и фоновая автоматизация
 
-Если у тебя агент работает по расписанию, ориентируйся на MCP tools, а не на HTTP endpoint'ы.
+Если агент работает по расписанию, ориентируйся на MCP tools:
 
 | Частота | Tool | Зачем |
 |---|---|---|
-| Каждые 10 минут | `get_unread_count` | Быстро понять, появились ли новые уведомления |
+| Каждые 10 минут | `get_unread_count` | Проверить новые уведомления |
 | Каждое утро | `list_recent_knowledge` | Забрать свежие материалы |
 | Каждое утро | `list_events` | Проверить ближайшие события |
-| После завершения урока | `track_progress` | Обновить прогресс |
-| 1-2 раза в день | `get_matches` | Проверить новые совпадения в нетворке |
-
-Пример логики cron:
-
-```text
-1. get_unread_count
-2. если unread > 0 -> list_notifications
-3. list_recent_knowledge
-4. list_events
-5. если есть важное -> уведомить пользователя
-```
+| После урока | `track_progress` | Обновить прогресс |
+| 1–2 раза в день | `get_matches` | Проверить новые совпадения в нетворке |
 
 ## Rate limit и ошибки
 
-Лимиты зависят от тарифа:
-
-- Free: `30/min`
-- Edge: `60/min`
-- Pro: `120/min`
-- VIP: `300/min`
+| Тариф | Лимит |
+|---|---:|
+| Free | 30/min |
+| Edge | 60/min |
+| Pro | 120/min |
+| VIP | 300/min |
 
 Если агент получает `rate_limit_exceeded`, добавь backoff и не делай агрессивный polling.
 
@@ -270,15 +219,15 @@ get_unread_count
 
 <CardGroup cols={2}>
   <Card title="Быстрый старт" icon="rocket" href="/quickstart">
-    Минимальное MCP-подключение без лишней теории
+    Минимальное MCP-подключение
+  </Card>
+  <Card title="OAuth через Telegram" icon="paper-plane" href="/guides/oauth-connect">
+    Подробный гайд по OAuth-подключению
   </Card>
   <Card title="Аутентификация" icon="key" href="/authentication">
     Формат ключа, scopes и правила доступа
   </Card>
   <Card title="Обзор tools" icon="book" href="/api-reference/introduction">
-    Какие MCP tools доступны и как они сгруппированы
-  </Card>
-  <Card title="Безопасность ключей" icon="lock" href="/guides/api-key-security">
-    Хранение, ротация и удаление ключей
+    Какие MCP tools доступны
   </Card>
 </CardGroup>

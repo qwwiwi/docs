@@ -1,21 +1,21 @@
 ---
 title: "Аутентификация"
-description: "API-ключи, scopes, rate limits и правила доступа к EdgeLab MCP"
+description: "API-ключи, OAuth через Telegram, scopes, rate limits и правила доступа к EdgeLab MCP"
 ---
 
 # Аутентификация
 
-EdgeLab использует MCP, а не REST. Подключение идёт к `https://mcp.edgelab.su/mcp`. Доступ управляется API-ключом (`el_live_...`) или через OAuth 2.1.
+EdgeLab использует MCP, а не REST. Подключение идёт к `https://mcp.edgelab.su/mcp`. Доступ управляется API-ключом (`el_live_...`) или через OAuth 2.1 с авторизацией через Telegram.
 
 
 ## Два способа аутентификации
 
-EdgeLab поддерживает два способа:
-
 | Способ | Когда использовать |
 |---|---|
 | **API-ключ** (`el_live_...`) | Клиенты с поддержкой заголовков (Claude Desktop, Cursor, Windsurf) |
-| **OAuth 2.1** | Клиенты без заголовков (Claude Code CLI), стандартный flow |
+| **OAuth 2.1 через Telegram** | Клиенты без заголовков (Claude Code CLI), стандартный flow |
+
+Оба способа работают одновременно. Ключ — для клиентов с заголовками. OAuth — для всех остальных.
 
 <Tip>
 Подробнее про OAuth: [Подключение через OAuth](/guides/oauth-connect)
@@ -24,9 +24,9 @@ EdgeLab поддерживает два способа:
 ## Как работает доступ
 
 - Публичные tools можно вызывать без ключа
-- Личные tools требуют API-ключ
+- Личные tools требуют API-ключ или OAuth-сессию
 - Ключ передаётся в заголовке `Authorization: Bearer ...` или `x-api-key`
-- OAuth 2.1 с PKCE поддерживается для клиентов без заголовков
+- OAuth 2.1 с PKCE — авторизация через Telegram-бота, без паролей и email
 
 <Warning>
 Если в старых заметках у тебя встречается `edgelab_live_...`, это устаревший формат. Текущий префикс только `el_live_`.
@@ -50,16 +50,27 @@ el_live_1a8c25f8b7165604
 
 Ключ создаётся через Telegram-бота [@InvestorEdgeLabbot](https://t.me/InvestorEdgeLabbot).
 
-Схема простая:
-
-1. Регистрируешься через бота
+1. Открой бота и нажми **START**
 2. Бот создаёт аккаунт и связывает `telegram_id` с профилем
 3. Бот отправляет API-ключ
 4. Этот ключ используешь в MCP-клиенте или своём агенте
 
 <Note>
-Веб-регистрации на `api.edgelab.su` для MCP нет. Это старая модель, её не используй.
+Регистрация и авторизация идут через Telegram. Отдельной веб-регистрации для MCP нет — всё через бота.
 </Note>
+
+## OAuth через Telegram
+
+При подключении через OAuth (например, Claude Code):
+
+1. Клиент запускает OAuth flow → открывается браузер
+2. На странице — кнопка **«Открыть Telegram»**
+3. Нажимаешь → попадаешь в бота → подтверждаешь
+4. Страница автоматически перенаправляет обратно → клиент получает токен
+
+Никаких паролей, форм или email-подтверждений. 10–15 секунд.
+
+Подробный гайд: [Подключение через OAuth](/guides/oauth-connect)
 
 ## Заголовки авторизации
 
@@ -84,6 +95,8 @@ x-api-key: el_live_1a8c25f8b7165604
 | Pro | 22 | Всё из Edge + `events:write` |
 | VIP | 20 | Всё из Pro, кроме `referrals:read` и `referrals:write` |
 
+<Accordion title="Полный список scopes по тарифам">
+
 ### Free
 
 ```text
@@ -93,80 +106,27 @@ knowledge:read
 ### Edge
 
 ```text
-knowledge:read
-knowledge:write
-profile:read
-profile:write
-progress:read
-progress:write
-achievements:read
-points:read
-billing:read
-billing:write
-support:read
-support:write
-notifications:read
-notifications:write
-events:read
-network:read
-network:write
-contributions:read
-contributions:write
-referrals:read
-referrals:write
+knowledge:read, knowledge:write, profile:read, profile:write
+progress:read, progress:write, achievements:read, points:read
+billing:read, billing:write, support:read, support:write
+notifications:read, notifications:write, events:read
+network:read, network:write, contributions:read, contributions:write
+referrals:read, referrals:write
 ```
 
 ### Pro
 
 ```text
-knowledge:read
-knowledge:write
-profile:read
-profile:write
-progress:read
-progress:write
-achievements:read
-points:read
-billing:read
-billing:write
-support:read
-support:write
-notifications:read
-notifications:write
-events:read
-events:write
-network:read
-network:write
-contributions:read
-contributions:write
-referrals:read
-referrals:write
+Всё из Edge + events:write
 ```
 
 ### VIP
 
 ```text
-knowledge:read
-knowledge:write
-profile:read
-profile:write
-progress:read
-progress:write
-achievements:read
-points:read
-billing:read
-billing:write
-support:read
-support:write
-notifications:read
-notifications:write
-events:read
-events:write
-network:read
-network:write
-contributions:read
-contributions:write
+Всё из Pro, кроме referrals:read и referrals:write
 ```
+
+</Accordion>
 
 ## Rate limits
 
@@ -184,24 +144,11 @@ contributions:write
 Публичный набор tools:
 
 ```text
-health
-search_knowledge
-get_knowledge
-list_knowledge
-list_categories
-get_knowledge_children
-list_recent_knowledge
-get_sections
-get_faq
-get_billing_plans
-register
-email_login
-forgot_password
-reset_password
-agent_forgot_password
-agent_reset_password
-subscribe
-resend_verify
+health, search_knowledge, get_knowledge, list_knowledge
+list_categories, get_knowledge_children, list_recent_knowledge
+get_sections, get_faq, get_billing_plans
+register, email_login, forgot_password, reset_password
+agent_forgot_password, agent_reset_password, subscribe, resend_verify
 ```
 
 ## Что доступно с ключом

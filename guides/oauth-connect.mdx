@@ -1,6 +1,6 @@
 ---
 title: "Подключение через OAuth"
-description: "Как подключить Claude Code, Cursor и других MCP-клиентов к EdgeLab через OAuth 2.1"
+description: "Как подключить Claude Code и других MCP-клиентов к EdgeLab через OAuth 2.1 с авторизацией через Telegram"
 ---
 
 # Подключение через OAuth
@@ -27,16 +27,16 @@ EdgeLab MCP поддерживает OAuth 2.1 для аутентификаци
 MCP Client (Claude Code)
     ↓ DCR (Dynamic Client Registration)
     ↓ OAuth 2.1 + PKCE
-EdgeLab MCP Server (OIDCProxy)
-    ↓ proxies auth to
-Supabase Auth (OIDC Provider)
-    ↓ user logs in
-JWT verified via JWKS
+EdgeLab MCP Server
+    ↓ /authorize → redirect
+Telegram Auth Page
+    ↓ user confirms in bot
+Supabase session created
     ↓
 Access granted with tier/scopes
 ```
 
-Всё происходит автоматически. Клиент регистрируется через DCR, получает `client_id`, запускает OAuth flow, пользователь логинится через Supabase Auth, клиент получает токен.
+Всё происходит автоматически. Клиент регистрируется через DCR, получает `client_id`, запускает OAuth flow. Пользователь подтверждает через Telegram — клиент получает токен.
 
 ## Подключение Claude Code
 
@@ -48,45 +48,94 @@ Access granted with tier/scopes
 claude mcp add edgelab-mcp --transport http https://mcp.edgelab.su/mcp
 ```
 
-</Step>
-
-<Step title="Запусти Claude Code">
-
-При первом вызове инструмента EdgeLab, Claude Code автоматически:
-1. Зарегистрирует себя через DCR
-2. Откроет браузер для логина
-3. Покажет consent page с запросом доступа
-4. Получит токен
-
-</Step>
-
-<Step title="Залогинься">
-
-В браузере откроется страница Supabase Auth. Войди через:
-- Email + пароль (если зарегистрирован через бота)
-- Google OAuth (если настроен)
-
-После подтверждения consent -- Claude Code получит доступ.
-
-</Step>
-
-</Steps>
-
-## Подключение через конфиг
-
-Если клиент поддерживает JSON-конфигурацию MCP:
+Или добавь в конфиг Claude Code (`~/.claude/settings.json`):
 
 ```json
 {
   "mcpServers": {
     "edgelab": {
+      "type": "streamable-http",
       "url": "https://mcp.edgelab.su/mcp"
     }
   }
 }
 ```
 
-Без заголовков. OAuth flow запустится автоматически при первом запросе.
+</Step>
+
+<Step title="Запусти Claude Code">
+
+При первом вызове инструмента EdgeLab, Claude Code автоматически:
+1. Зарегистрирует себя через DCR
+2. Откроет браузер для авторизации
+3. Покажет страницу авторизации через Telegram
+
+</Step>
+
+<Step title="Подтверди через Telegram">
+
+В браузере откроется страница с кнопкой **«Открыть Telegram»**.
+
+1. Нажми кнопку — откроется бот [@InvestorEdgeLabbot](https://t.me/InvestorEdgeLabbot)
+2. Нажми **START** (или `/start`) — бот привяжет твой аккаунт
+3. Страница автоматически определит подтверждение и перенаправит обратно в Claude Code
+
+Весь процесс занимает 10–15 секунд. Никаких паролей, email-подтверждений или форм.
+
+</Step>
+
+</Steps>
+
+<Tip>
+Если у тебя уже есть аккаунт EdgeLab через Telegram — авторизация пройдёт мгновенно. Если нет — бот создаст аккаунт автоматически при первом подтверждении.
+</Tip>
+
+## Подключение через конфиг
+
+Для клиентов с JSON-конфигурацией MCP:
+
+<CodeGroup>
+
+```json Claude Code
+{
+  "mcpServers": {
+    "edgelab": {
+      "type": "streamable-http",
+      "url": "https://mcp.edgelab.su/mcp"
+    }
+  }
+}
+```
+
+```json Claude Desktop
+{
+  "mcpServers": {
+    "edgelab": {
+      "url": "https://mcp.edgelab.su/mcp",
+      "headers": {
+        "Authorization": "Bearer el_live_ваш_ключ"
+      }
+    }
+  }
+}
+```
+
+```json Cursor / Windsurf
+{
+  "mcpServers": {
+    "edgelab": {
+      "url": "https://mcp.edgelab.su/mcp",
+      "headers": {
+        "x-api-key": "el_live_ваш_ключ"
+      }
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+Без заголовков — OAuth flow запустится автоматически при первом запросе.
 
 ## Что получает OAuth-пользователь
 
@@ -101,7 +150,7 @@ claude mcp add edgelab-mcp --transport http https://mcp.edgelab.su/mcp
 
 ## OAuth + API-ключ
 
-Оба способа работают одновременно. Если у тебя уже есть `el_live_` ключ, он продолжит работать через заголовки. OAuth -- альтернативный путь для клиентов без поддержки заголовков.
+Оба способа работают одновременно. Если у тебя уже есть `el_live_` ключ, он продолжит работать через заголовки. OAuth — альтернативный путь для клиентов без поддержки заголовков.
 
 ## Discovery endpoint
 
@@ -116,9 +165,9 @@ https://mcp.edgelab.su/.well-known/oauth-authorization-server
 ## Поддерживаемые возможности
 
 - **OAuth 2.1** с PKCE (S256)
-- **Dynamic Client Registration** (DCR) -- клиенты регистрируются автоматически
-- **Consent page** -- пользователь явно подтверждает доступ
-- **Token rotation** -- refresh tokens ротируются автоматически
+- **Dynamic Client Registration** (DCR) — клиенты регистрируются автоматически
+- **Telegram-авторизация** — без email и паролей
+- **Token rotation** — refresh tokens ротируются автоматически
 - **Scopes**: openid, email, profile, knowledge:read, profile:read, profile:write, progress:write, billing:read и другие
 
 ## Troubleshooting
@@ -132,10 +181,12 @@ https://mcp.edgelab.su/.well-known/oauth-authorization-server
 - Запускать authorization code flow с PKCE
 </Accordion>
 
-<Accordion title="Ошибка при логине">
-Убедись что у тебя есть аккаунт в EdgeLab. Зарегистрироваться можно через:
-- Telegram бота [@InvestorEdgeLabbot](https://t.me/InvestorEdgeLabbot)
-- MCP tool `register` с публичным доступом
+<Accordion title="Страница авторизации не открывается">
+Убедись что браузер по умолчанию настроен и может открывать ссылки. Claude Code автоматически запускает OAuth flow через системный браузер.
+</Accordion>
+
+<Accordion title="Бот не отвечает при подтверждении">
+Попробуй нажать `/start` ещё раз в боте [@InvestorEdgeLabbot](https://t.me/InvestorEdgeLabbot). Если проблема остаётся — обратись в поддержку через Telegram-канал.
 </Accordion>
 
 <Accordion title="Tier определяется как Free">

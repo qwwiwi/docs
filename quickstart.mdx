@@ -26,49 +26,48 @@ https://mcp.edgelab.su/mcp
 | Режим | Что нужно | Что получаешь |
 |---|---|---|
 | Public | Ничего, даже ключ не нужен | Публичные tools и гайды |
-| Personal | Ключ от `@InvestorEdgeLabbot` | Профиль, прогресс, events, network, support, contributions и другое |
-
-Формат ключа:
-
-```text
-el_live_1a8c25f8b7165604
-```
+| Personal | Ключ от `@InvestorEdgeLabbot` или OAuth через Telegram | Профиль, прогресс, events, network, support, contributions и другое |
 
 </Step>
 
 <Step title="Добавь конфиг в свой клиент">
 
 <CodeGroup>
-```json Claude Desktop
+```bash Claude Code (CLI)
+claude mcp add edgelab-mcp --transport http https://mcp.edgelab.su/mcp
+```
+
+```json Claude Code (конфиг)
 {
   "mcpServers": {
     "edgelab": {
+      "type": "streamable-http",
       "url": "https://mcp.edgelab.su/mcp"
     }
   }
 }
 ```
 
-```json Cursor
+```json Claude Desktop
 {
   "mcpServers": {
     "edgelab": {
       "url": "https://mcp.edgelab.su/mcp",
       "headers": {
-        "Authorization": "Bearer el_live_1a8c25f8b7165604"
+        "Authorization": "Bearer el_live_ваш_ключ"
       }
     }
   }
 }
 ```
 
-```json Windsurf
+```json Cursor / Windsurf
 {
   "mcpServers": {
     "edgelab": {
       "url": "https://mcp.edgelab.su/mcp",
       "headers": {
-        "x-api-key": "el_live_1a8c25f8b7165604"
+        "x-api-key": "el_live_ваш_ключ"
       }
     }
   }
@@ -76,9 +75,23 @@ el_live_1a8c25f8b7165604
 ```
 </CodeGroup>
 
-<Note>
-Если клиент не умеет кастомные заголовки прямо в конфиге, используй public-режим или локальный прокси/обёртку, которая добавляет `Authorization`/`x-api-key`.
-</Note>
+<Tip>
+**Claude Code** не требует API-ключ — при первом запросе автоматически запустится OAuth через Telegram. Просто подтверди в боте и всё заработает.
+</Tip>
+
+</Step>
+
+<Step title="Авторизуйся">
+
+**Для Claude Code (OAuth):**
+1. При первом вызове tool откроется браузер
+2. На странице — кнопка **«Открыть Telegram»**
+3. Перейди в бота, нажми START → готово
+
+**Для остальных клиентов (API-ключ):**
+1. Открой [@InvestorEdgeLabbot](https://t.me/InvestorEdgeLabbot)
+2. Нажми START → бот выдаст ключ `el_live_...`
+3. Добавь ключ в конфиг клиента
 
 </Step>
 
@@ -106,66 +119,17 @@ el_live_1a8c25f8b7165604
 
 </Step>
 
-<Step title="Попробуй личный tool с ключом">
-
-После регистрации у бота можно вызывать личные tools, например профиль:
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": "2",
-  "method": "tools/call",
-  "params": {
-    "name": "get_user_profile",
-    "arguments": {}
-  }
-}
-```
-
-Или посмотреть свой баланс поинтов:
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": "3",
-  "method": "tools/call",
-  "params": {
-    "name": "get_points_balance",
-    "arguments": {}
-  }
-}
-```
-
-</Step>
-
 </Steps>
 
 ## Публичные tools, которые работают сразу
 
 ```text
-health
-search_knowledge
-get_knowledge
-list_knowledge
-list_categories
-get_knowledge_children
-list_recent_knowledge
-get_sections
-get_faq
-get_billing_plans
-register
-email_login
-forgot_password
-reset_password
-agent_forgot_password
-agent_reset_password
-subscribe
-resend_verify
+health, search_knowledge, get_knowledge, list_knowledge
+list_categories, get_knowledge_children, list_recent_knowledge
+get_sections, get_faq, get_billing_plans
+register, email_login, forgot_password, reset_password
+agent_forgot_password, agent_reset_password, subscribe, resend_verify
 ```
-
-## Если нужен полный доступ
-
-Регистрация и выдача ключа происходят через [@InvestorEdgeLabbot](https://t.me/InvestorEdgeLabbot). Веб-регистрации для MCP-интеграции нет.
 
 ## Что дальше
 
@@ -173,13 +137,13 @@ resend_verify
   <Card title="Аутентификация" icon="key" href="/authentication">
     Формат ключа, scopes и лимиты
   </Card>
+  <Card title="OAuth через Telegram" icon="paper-plane" href="/guides/oauth-connect">
+    Подробный гайд по OAuth-подключению
+  </Card>
   <Card title="Подключить агента" icon="plug" href="/guides/connect-agent">
     Практический гайд по MCP-подключению
   </Card>
   <Card title="Обзор MCP tools" icon="book" href="/api-reference/introduction">
     Какие tools есть и что они делают
-  </Card>
-  <Card title="Безопасность ключей" icon="lock" href="/guides/api-key-security">
-    Как хранить и ротировать ключи
   </Card>
 </CardGroup>
