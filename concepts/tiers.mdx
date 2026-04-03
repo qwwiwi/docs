@@ -19,18 +19,18 @@ description: "Free, Edge, Pro и VIP -- какие данные, scopes и MCP t
 | Уроки, скиллы, воркшопы | -- | + | + | + |
 | Use cases | -- | -- | + | + |
 | Live-записи | -- | + | + | + |
-| Профиль | -- | + | + | + |
+| Профиль и API-ключи | -- | + | + | + |
 | Прогресс обучения | -- | + | + | + |
 | Поинты и достижения | -- | + | + | + |
-| Уведомления | -- | + | + | + |
 | Биллинг и подписка | -- | + | + | + |
-| Поддержка | -- | + | + | + |
-| Events: просмотр и RSVP | -- | + | + | + |
-| Events: предложить событие | -- | -- | + | + |
-| Нетворк и matching | -- | + | + | + |
-| Contributions | -- | + | + | + |
-| Рефералы | -- | + | + | -- |
-| Priority support | -- | -- | + | + |
+| Отзывы и избранное | -- | + | + | + |
+| Events: просмотр | + | + | + | + |
+| Events: RSVP и предложения | -- | -- | + | + |
+| Нетворк и matching | -- | -- | + | + |
+| Contributions | -- | -- | + | + |
+| Поддержка (тикеты) | -- | -- | + | + |
+| Уведомления | -- | -- | + | + |
+| Рефералы | -- | -- | + | -- |
 | Early access | -- | -- | -- | + |
 
 ## Free
@@ -40,13 +40,13 @@ description: "Free, Edge, Pro и VIP -- какие данные, scopes и MCP t
 - Scope: `knowledge:read`
 - Доступный контент: только `guide`
 - Rate limit: `30/min`
-- Видимые публичные tools: `search_knowledge`, `list_knowledge`, `get_sections`, `get_faq`, `health`, `get_billing_plans`, `register`, `email_login`
+- Видимые публичные tools: `health`, `search_knowledge`, `get_knowledge`, `list_knowledge`, `list_categories`, `get_knowledge_children`, `list_recent_knowledge`, `get_sections`, `get_faq`, `get_billing_plans`, `register`, `email_login`, `forgot_password`, `reset_password`, `list_events`, `get_event`, `get_event_calendar`, `get_dashboard`
 
 Free работает даже без ключа. Если клиент умеет подключаться к MCP-серверу без заголовков авторизации, ты уже можешь читать публичную часть базы знаний.
 
 ## Edge
 
-Это основной рабочий уровень для человека и его агента: обучение, профиль, прогресс, события, поддержка, нетворк и contributions уже доступны.
+Это основной уровень для учёбы: профиль, прогресс обучения, достижения, поинты, подписка, отзывы и избранное. События доступны для просмотра. Для нетворка, тикетов и contributions нужен Pro.
 
 - Scopes: `21`
 - Контент: `guide`, `lesson`, `skill`, `workshop`, `live`
