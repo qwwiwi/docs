@@ -1,0 +1,166 @@
+---
+title: "Подключение через OAuth"
+description: "Как подключить Claude Code, Cursor и других MCP-клиентов к EdgeLab через OAuth 2.1"
+---
+
+# Подключение через OAuth
+
+EdgeLab MCP поддерживает OAuth 2.1 для аутентификации. Это стандартный способ подключения для MCP-клиентов вроде Claude Code, которые не умеют передавать заголовки с API-ключом.
+
+## Когда нужен OAuth
+
+| Клиент | Способ подключения |
+|---|---|
+| Claude Code (CLI) | OAuth (автоматически) |
+| Claude Desktop | API-ключ или OAuth |
+| Cursor | API-ключ |
+| Windsurf | API-ключ |
+| Свой агент | API-ключ (проще) или OAuth |
+
+<Note>
+Если твой клиент поддерживает заголовки (`Authorization: Bearer el_live_...`), API-ключ проще. OAuth нужен когда клиент не умеет в заголовки, но умеет в стандартный OAuth flow.
+</Note>
+
+## Как это работает
+
+```text
+MCP Client (Claude Code)
+    ↓ DCR (Dynamic Client Registration)
+    ↓ OAuth 2.1 + PKCE
+EdgeLab MCP Server (OIDCProxy)
+    ↓ proxies auth to
+Supabase Auth (OIDC Provider)
+    ↓ user logs in
+JWT verified via JWKS
+    ↓
+Access granted with tier/scopes
+```
+
+Всё происходит автоматически. Клиент регистрируется через DCR, получает `client_id`, запускает OAuth flow, пользователь логинится через Supabase Auth, клиент получает токен.
+
+## Подключение Claude Code
+
+<Steps>
+
+<Step title="Добавь MCP сервер">
+
+```bash
+claude mcp add edgelab-mcp --transport http https://mcp.edgelab.su/mcp
+```
+
+</Step>
+
+<Step title="Запусти Claude Code">
+
+При первом вызове инструмента EdgeLab, Claude Code автоматически:
+1. Зарегистрирует себя через DCR
+2. Откроет браузер для логина
+3. Покажет consent page с запросом доступа
+4. Получит токен
+
+</Step>
+
+<Step title="Залогинься">
+
+В браузере откроется страница Supabase Auth. Войди через:
+- Email + пароль (если зарегистрирован через бота)
+- Google OAuth (если настроен)
+
+После подтверждения consent -- Claude Code получит доступ.
+
+</Step>
+
+</Steps>
+
+## Подключение через конфиг
+
+Если клиент поддерживает JSON-конфигурацию MCP:
+
+```json
+{
+  "mcpServers": {
+    "edgelab": {
+      "url": "https://mcp.edgelab.su/mcp"
+    }
+  }
+}
+```
+
+Без заголовков. OAuth flow запустится автоматически при первом запросе.
+
+## Что получает OAuth-пользователь
+
+После аутентификации MCP сервер определяет tier пользователя из Supabase и открывает соответствующие tools:
+
+| Tier | Tools | Rate limit |
+|---|---:|---:|
+| Free | 18 публичных | 30/min |
+| Edge | 39 | 60/min |
+| Pro | 56 | 120/min |
+| VIP | 56 | 300/min |
+
+## OAuth + API-ключ
+
+Оба способа работают одновременно. Если у тебя уже есть `el_live_` ключ, он продолжит работать через заголовки. OAuth -- альтернативный путь для клиентов без поддержки заголовков.
+
+## Discovery endpoint
+
+OAuth metadata доступен по стандартному пути:
+
+```
+https://mcp.edgelab.su/.well-known/oauth-authorization-server
+```
+
+Там перечислены все endpoints: authorization, token, registration, scopes.
+
+## Поддерживаемые возможности
+
+- **OAuth 2.1** с PKCE (S256)
+- **Dynamic Client Registration** (DCR) -- клиенты регистрируются автоматически
+- **Consent page** -- пользователь явно подтверждает доступ
+- **Token rotation** -- refresh tokens ротируются автоматически
+- **Scopes**: openid, email, profile, knowledge:read, profile:read, profile:write, progress:write, billing:read и другие
+
+## Troubleshooting
+
+<AccordionGroup>
+
+<Accordion title="OAuth flow не запускается">
+Проверь что клиент поддерживает OAuth 2.1. Должен уметь:
+- Читать `/.well-known/oauth-authorization-server`
+- Выполнять DCR на `/register`
+- Запускать authorization code flow с PKCE
+</Accordion>
+
+<Accordion title="Ошибка при логине">
+Убедись что у тебя есть аккаунт в EdgeLab. Зарегистрироваться можно через:
+- Telegram бота [@InvestorEdgeLabbot](https://t.me/InvestorEdgeLabbot)
+- MCP tool `register` с публичным доступом
+</Accordion>
+
+<Accordion title="Tier определяется как Free">
+Убедись что подписка активна. Проверь через:
+```bash
+# В Claude Code после подключения
+get_my_subscription
+```
+</Accordion>
+
+</AccordionGroup>
+
+## Что дальше
+
+<CardGroup cols={2}>
+  <Card title="API-ключи" icon="key" href="/authentication">
+    Альтернативный способ через API-ключ
+  </Card>
+  <Card title="Подключение агента" icon="robot" href="/guides/connect-agent">
+    Полный гайд по подключению агента
+  </Card>
+  <Card title="Безопасность ключей" icon="lock" href="/guides/api-key-security">
+    Хранение и ротация ключей
+  </Card>
+  <Card title="Обзор tools" icon="book" href="/api-reference/introduction">
+    Какие MCP tools доступны
+  </Card>
+</CardGroup>

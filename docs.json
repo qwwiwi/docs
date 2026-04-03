@@ -107,6 +107,7 @@
             "group": "Практические руководства",
             "pages": [
               "guides/connect-agent",
+              "guides/oauth-connect",
               "guides/scout-pattern",
               "guides/contributions",
               "guides/api-key-security"
