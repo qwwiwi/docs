@@ -119,13 +119,18 @@
     "global": {
       "anchors": [
         {
+          "anchor": "Сайт",
+          "href": "https://edgelab.su",
+          "icon": "globe"
+        },
+        {
           "anchor": "Платформа",
           "href": "https://platform.edgelab.su",
           "icon": "globe"
         },
         {
-          "anchor": "Telegram",
-          "href": "https://t.me/edgelabchannel",
+          "anchor": "Telegram-канал",
+          "href": "https://t.me/+aymT0dch1pViMGNi",
           "icon": "paper-plane"
         }
       ]
@@ -139,7 +144,7 @@
     "links": [
       {
         "label": "Telegram",
-        "href": "https://t.me/edgelabchannel"
+        "href": "https://t.me/+aymT0dch1pViMGNi"
       }
     ],
     "primary": {
@@ -162,8 +167,9 @@
   },
   "footer": {
     "socials": {
-      "telegram": "https://t.me/edgelabchannel",
-      "github": "https://github.com/qwwiwi"
+      "telegram": "https://t.me/+aymT0dch1pViMGNi",
+      "github": "https://github.com/qwwiwi",
+      "website": "https://edgelab.su"
     }
   }
 }
