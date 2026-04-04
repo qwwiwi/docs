@@ -3,9 +3,9 @@
   "theme": "mint",
   "name": "EdgeLab API",
   "colors": {
-    "primary": "#FFFFFF",
-    "light": "#E5E5E5",
-    "dark": "#FAFAFA"
+    "primary": "#A1A1AA",
+    "light": "#D4D4D8",
+    "dark": "#71717A"
   },
   "favicon": "/favicon.svg",
   "navigation": {
