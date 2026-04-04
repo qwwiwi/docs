@@ -58,7 +58,7 @@ API анализирует пользовательский контент на 
 
 ### Rate limiting
 
-60 запросов в минуту на ключ. Защищает от brute-force атак и злоупотребления API.
+30--300 запросов в минуту в зависимости от тарифа. Защищает от brute-force атак и злоупотребления API.
 
 ### Scope-based доступ
 
@@ -113,7 +113,7 @@ def api_request(method, path, **kwargs):
 |---|---|---|
 | Prompt injection через данные | Санитизация, JSON-only, injection scoring | Scout Pattern, фильтрация |
 | Утечка API ключа | Ключ показывается один раз, ротация | .secrets/, env vars, .gitignore |
-| Brute-force | Rate limiting 60/мин | Обработка 429 ошибок |
+| Brute-force | Rate limiting 30--300/мин | Обработка 429 ошибок |
 | Чрезмерные действия | Scope-based доступ | Минимальные права, отдельные ключи |
 | Перехват трафика | Только HTTPS | Проверка сертификатов (по умолчанию в requests) |
 
