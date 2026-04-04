@@ -9,9 +9,15 @@ EdgeLab использует MCP, а не REST API. Поэтому здесь н
 
 ## Точка подключения
 
-```text
-https://mcp.edgelab.su/mcp
+Адрес MCP-сервера: `https://mcp.edgelab.su/mcp`
+
+Для подключения через Claude Code CLI:
+
+```bash
+claude mcp add edgelab-mcp --transport http https://mcp.edgelab.su/mcp
 ```
+
+Для других клиентов (Claude Desktop, Cursor, Windsurf) -- смотри [гайд по подключению](/guides/connect-agent).
 
 ## Как выглядит вызов
 
