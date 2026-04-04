@@ -96,27 +96,34 @@ claude mcp add edgelab-mcp --transport http https://mcp.edgelab.su/mcp
 
 <Step title="Проверь public tools">
 
-Самый простой smoke test:
+Задачу агенту ставь естественным языком -- MCP-клиент сам выберет tool. Например:
 
-```json
-{
-  "name": "health",
-  "arguments": {}
-}
+```text
+Вызови tool health чтобы проверить EdgeLab MCP
 ```
 
-Затем:
+или:
+
+```text
+Покажи первые 3 гайда из EdgeLab
+```
+
+Под капотом клиент сделает tool call:
+
+```json
+{ "name": "health", "arguments": {} }
+```
 
 ```json
 {
   "name": "list_knowledge",
-  "arguments": {
-    "category": "guide",
-    "page": 1,
-    "per_page": 3
-  }
+  "arguments": { "category": "guide", "page": 1, "per_page": 3 }
 }
 ```
+
+<Warning>
+Вызывать MCP tools через `curl` или raw HTTP нельзя -- получишь `401 invalid_token`. MCP работает только через клиент (Claude Code, Claude Desktop, Cursor, Windsurf).
+</Warning>
 
 </Step>
 

@@ -97,23 +97,34 @@ claude mcp add edgelab-mcp --transport http https://mcp.edgelab.su/mcp
 
 <Step title="Сделай первый вызов">
 
-Самый безопасный первый вызов без ключа:
+После подключения MCP-сервера вызов tool происходит через клиента, а не через `curl`. В Claude Code просто попроси агента:
+
+```text
+Вызови tool list_knowledge с category=guide, per_page=5
+```
+
+Или задай вопрос на естественном языке:
+
+```text
+Покажи мне первые 5 гайдов с EdgeLab
+```
+
+Агент сам выберет нужный tool и передаст аргументы. Под капотом MCP-клиент отправит такой запрос:
 
 ```json
 {
-  "jsonrpc": "2.0",
-  "id": "1",
-  "method": "tools/call",
-  "params": {
-    "name": "list_knowledge",
-    "arguments": {
-      "category": "guide",
-      "page": 1,
-      "per_page": 5
-    }
+  "name": "list_knowledge",
+  "arguments": {
+    "category": "guide",
+    "page": 1,
+    "per_page": 5
   }
 }
 ```
+
+<Warning>
+**Нельзя** вызывать MCP tools через `curl` или raw HTTP. MCP -- это не REST API, а streaming-протокол с авторизацией. Вызов всегда идёт через MCP-клиент (Claude Code, Claude Desktop, Cursor, Windsurf) после подключения.
+</Warning>
 
 Если всё подключено правильно, в ответе придёт список гайдов.
 

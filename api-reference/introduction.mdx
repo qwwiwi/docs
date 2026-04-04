@@ -15,22 +15,27 @@ https://mcp.edgelab.su/mcp
 
 ## Как выглядит вызов
 
-MCP-клиент сам показывает tools в интерфейсе, но если смотреть на это концептуально, вызов выглядит так:
+MCP-клиент сам показывает tools в интерфейсе. Ты просто формулируешь задачу естественным языком, а клиент сам подбирает нужный tool и параметры:
+
+```text
+Найди на EdgeLab материалы про MCP сервер -- покажи 5 результатов
+```
+
+Под капотом клиент отправит MCP-серверу такой tool call:
 
 ```json
 {
-  "jsonrpc": "2.0",
-  "id": "example-1",
-  "method": "tools/call",
-  "params": {
-    "name": "search_knowledge",
-    "arguments": {
-      "query": "mcp server",
-      "limit": 5
-    }
+  "name": "search_knowledge",
+  "arguments": {
+    "query": "mcp server",
+    "limit": 5
   }
 }
 ```
+
+<Warning>
+**Не пытайся** вызывать tools через `curl` к `https://mcp.edgelab.su/mcp`. MCP -- это streaming-протокол с OAuth/API-key аутентификацией, не REST. Raw HTTP-запросы вернут `401 invalid_token`. Всегда используй MCP-клиент (Claude Code, Claude Desktop, Cursor, Windsurf).
+</Warning>
 
 ## Аутентификация
 
