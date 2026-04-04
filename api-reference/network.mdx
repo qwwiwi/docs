@@ -11,15 +11,15 @@ description: "MCP tools для сообщества и matching: список у
 
 | Tool | Доступ | Что делает |
 |---|---|---|
-| `list_members` | Pro/VIP | Возвращает список участников |
-| `search_members` | Pro/VIP | Ищет участников по фильтрам и запросу |
-| `get_matches` | Pro/VIP | Возвращает алгоритмические совпадения |
-| `list_connect_requests` | Pro/VIP | Список входящих и исходящих connect-запросов |
-| `send_connect_request` | Pro/VIP | Отправляет connect-запрос |
-| `respond_connect_request` | Pro/VIP | Принимает или отклоняет запрос |
+| `list_members` | Edge+ | Возвращает список участников |
+| `search_members` | Edge+ | Ищет участников по фильтрам и запросу |
+| `get_matches` | Edge+ | Возвращает алгоритмические совпадения |
+| `list_connect_requests` | Edge+ | Список входящих и исходящих connect-запросов |
+| `send_connect_request` | Edge+ | Отправляет connect-запрос |
+| `respond_connect_request` | Edge+ | Принимает или отклоняет запрос |
 
 <Warning>
-В общем тарифном описании network-функции присутствуют уже на Edge, но социальный MCP-контур с `list_members` и connect-tools в текущем наборе tools зафиксирован как `Pro/VIP`. Если продукт это изменит, править нужно одновременно и этот раздел, и таблицы тарифов.
+Network-инструменты доступны с тарифа Edge: поиск участников, matching и connect-запросы.
 </Warning>
 
 ## `list_members`
