@@ -40,7 +40,7 @@ description: "Free, Edge, Pro и VIP -- какие данные, scopes и MCP t
 - Scope: `knowledge:read`
 - Доступный контент: только `guide`
 - Rate limit: `30/min`
-- Видимые публичные tools: `health`, `search_knowledge`, `get_knowledge`, `list_knowledge`, `list_categories`, `get_knowledge_children`, `list_recent_knowledge`, `get_sections`, `get_dashboard`, `get_faq`, `get_billing_plans`, `list_events`, `get_event`, `get_event_calendar`, `register`, `list_events`, `get_event`, `get_event_calendar`, `get_dashboard`
+- Видимые публичные tools: `health`, `search_knowledge`, `get_knowledge`, `list_knowledge`, `list_categories`, `get_knowledge_children`, `list_recent_knowledge`, `get_sections`, `get_dashboard`, `get_faq`, `get_billing_plans`, `list_events`, `get_event`, `get_event_calendar`, `register`
 
 Free работает даже без ключа. Если клиент умеет подключаться к MCP-серверу без заголовков авторизации, ты уже можешь читать публичную часть базы знаний.
 
@@ -118,9 +118,9 @@ referrals:write
 
 ## VIP
 
-VIP даёт полный контент, высокий лимит запросов и ранний доступ, но сейчас этот тариф в продажу не выдаётся.
+VIP даёт те же tools что Pro, но с rate limit 300/min и ранним доступом. Сейчас тариф не продаётся.
 
-- Scopes: `20`
+- Scopes: `22` (как Pro)
 - Контент: полный доступ + early access
 - Rate limit: `300/min`
 - Extras: office hours, 1-on-1, early access
@@ -152,6 +152,8 @@ network:read
 network:write
 contributions:read
 contributions:write
+referrals:read
+referrals:write
 ```
 
 ## Категории контента
@@ -167,12 +169,12 @@ contributions:write
 
 ## Что реально видит агент
 
-| Уровень | Что получает агент |
-|---|---|
-| Free | Публичный поиск по гайдам и FAQ без авторизации |
-| Edge | Полноценную личную работу: профиль, прогресс, очки, события, support, network, contributions |
-| Pro | Всё из Edge + `events:write`, категория `usecase`, priority support |
-| VIP | Всё из Pro, кроме referral scopes, плюс early access и расширенные лимиты |
+| Уровень | Tools | Что получает агент |
+|---|---|---|
+| Free | 15 | Публичный поиск по гайдам, события, FAQ, регистрация |
+| Edge | 66 | Всё для работы: профиль, прогресс, нетворк, contributions, поддержка, уведомления, рефералы, RSVP |
+| Pro | 68 | Всё из Edge + предложение событий + use cases + API Use Cases |
+| VIP | 68 | Всё из Pro + rate limit 300/min + early access |
 
 ## Как выбрать
 
