@@ -5,16 +5,16 @@ description: "API-ключи, OAuth через Telegram, scopes, rate limits и 
 
 # Аутентификация
 
-EdgeLab использует MCP, а не REST. Подключение идёт к `https://mcp.edgelab.su/mcp`. Доступ управляется API-ключом (`el_live_...`) или через OAuth 2.1 с авторизацией через Telegram.
+EdgeLab работает через MCP, а не REST. Адрес один: `https://mcp.edgelab.su/mcp`. Авторизация обязательна -- через API-ключ (`el_live_...`) или OAuth 2.1 с подтверждением в Telegram.
 
 ## Два способа аутентификации
 
 | Способ | Когда использовать |
 |---|---|
-| **API-ключ** (`el_live_...`) | Клиенты с поддержкой заголовков (Claude Desktop, Cursor, Windsurf) |
-| **OAuth 2.1 через Telegram** | Клиенты без заголовков (Claude Code CLI), стандартный flow |
+| **API-ключ** (`el_live_...`) | Claude Code (с `-H` флагом), Claude Desktop, Cursor, Windsurf |
+| **OAuth 2.1 через Telegram** | Claude Code (без ключа), любой клиент с поддержкой OAuth |
 
-Оба способа работают одновременно. Ключ — для клиентов с заголовками. OAuth — для всех остальных.
+Оба способа работают одновременно. Без авторизации сервер вернёт `401`.
 
 <Tip>
 Подробнее про OAuth: [Подключение через OAuth](/guides/oauth-connect)
@@ -22,10 +22,10 @@ EdgeLab использует MCP, а не REST. Подключение идёт 
 
 ## Как работает доступ
 
-- Публичные tools можно вызывать без ключа
-- Личные tools требуют API-ключ или OAuth-сессию
+- Авторизация обязательна для всех запросов -- без ключа или OAuth-сессии сервер вернёт `401`
+- После авторизации tier пользователя (Free, Edge, Pro, VIP) определяет набор доступных tools
 - Ключ передаётся в заголовке `Authorization: Bearer ...` или `x-api-key`
-- OAuth 2.1 с PKCE — авторизация через Telegram-бота, без паролей и email
+- OAuth 2.1 с PKCE -- авторизация через Telegram-бота, без паролей и email
 
 <Warning>
 Если в старых заметках у тебя встречается `edgelab_live_...`, это устаревший формат. Текущий префикс только `el_live_`.
@@ -36,14 +36,14 @@ EdgeLab использует MCP, а не REST. Подключение идёт 
 API-ключ выглядит так:
 
 ```text
-el_live_1a8c25f8b7165604
+el_live_bc76e9508a27d40109443446a2155758eb42769794049a39
 ```
 
 Правила:
 
 - Префикс: `el_live_`
-- Хвост: `16` hex-символов
-- Общая длина: `24` символа
+- Хвост: `48` hex-символов
+- Общая длина: `56` символов
 
 ## Где получить ключ
 
@@ -75,11 +75,11 @@ el_live_1a8c25f8b7165604
 
 <CodeGroup>
 ```http Authorization
-Authorization: Bearer el_live_1a8c25f8b7165604
+Authorization: Bearer el_live_bc76e9508a27d40109443446a2155758eb42769794049a39
 ```
 
 ```http x-api-key
-x-api-key: el_live_1a8c25f8b7165604
+x-api-key: el_live_bc76e9508a27d40109443446a2155758eb42769794049a39
 ```
 </CodeGroup>
 
@@ -138,20 +138,23 @@ referrals:read, referrals:write
 
 Если лимит превышен, MCP-сервер вернёт ошибку `rate_limit_exceeded`. Для циклов и cron-процессов добавь backoff и паузы между вызовами.
 
-## Что доступно без ключа
+## Tools по тарифам
 
-Публичный набор tools:
+### Free (18 tools)
+
+После авторизации (OAuth или ключ) пользователь с Free-тарифом получает:
 
 ```text
 health, search_knowledge, get_knowledge, list_knowledge
 list_categories, get_knowledge_children, list_recent_knowledge
 get_sections, get_dashboard, get_faq, get_billing_plans
 list_events, get_event, get_event_calendar, register
+write_review, list_recent_knowledge, get_dashboard
 ```
 
-## Что доступно с ключом
+### Edge и выше (63 tools)
 
-С ключом открываются личные и социальные tools: профиль, прогресс, achievements, points, subscriptions, auth, events, network, contributions, support, notifications и admin-инструменты для нужных ролей.
+С подпиской открываются личные и социальные tools: профиль, прогресс, achievements, points, subscriptions, auth, events, network, contributions, support, notifications и admin-инструменты для нужных ролей.
 
 ## Практические правила
 
@@ -159,4 +162,4 @@ list_events, get_event, get_event_calendar, register
 - Не коммить ключ в git
 - Для каждого агента лучше держать отдельный ключ
 - Если ключ засветился, ротируй или удаляй его через auth tools
-- Если нужен только публичный поиск по гайдам, ключ вообще не обязателен
+- Для Free-доступа достаточно OAuth (ключ не обязателен, но авторизация нужна)

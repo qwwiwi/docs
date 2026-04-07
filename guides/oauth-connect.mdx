@@ -5,20 +5,20 @@ description: "Как подключить Claude Code и других MCP-кли
 
 # Подключение через OAuth
 
-EdgeLab MCP поддерживает OAuth 2.1 для аутентификации. Это стандартный способ подключения для MCP-клиентов вроде Claude Code, которые не умеют передавать заголовки с API-ключом.
+EdgeLab MCP поддерживает OAuth 2.1 для аутентификации. OAuth нужен когда у клиента нет API-ключа или он предпочитает стандартный flow. Claude Code поддерживает оба варианта: и ключ через `-H` флаг, и OAuth.
 
 ## Когда нужен OAuth
 
-| Клиент | Способ подключения |
-|---|---|
-| Claude Code (CLI) | OAuth (автоматически) |
-| Claude Desktop | API-ключ или OAuth |
-| Cursor | API-ключ |
-| Windsurf | API-ключ |
-| Свой агент | API-ключ (проще) или OAuth |
+| Клиент | API-ключ | OAuth |
+|---|:---:|:---:|
+| Claude Code (CLI) | + (через `-H` флаг) | + (автоматически) |
+| Claude Desktop | + | + |
+| Cursor | + | -- |
+| Windsurf | + | -- |
+| Свой агент | + (проще) | + |
 
 <Note>
-Если твой клиент поддерживает заголовки (`Authorization: Bearer el_live_...`), API-ключ проще. OAuth нужен когда клиент не умеет в заголовки, но умеет в стандартный OAuth flow.
+API-ключ проще и быстрее -- получи в боте [@InvestorEdgeLabbot](https://t.me/InvestorEdgeLabbot) и подключайся. OAuth нужен когда ключа нет или клиент предпочитает стандартный flow.
 </Note>
 
 ## Как это работает
@@ -45,7 +45,11 @@ Access granted with tier/scopes
 <Step title="Добавь MCP сервер">
 
 ```bash
-claude mcp add edgelab-mcp --transport http https://mcp.edgelab.su/mcp
+# Без ключа -- OAuth flow запустится автоматически:
+claude mcp add --transport http edgelab https://mcp.edgelab.su/mcp
+
+# Или с ключом (OAuth не нужен):
+claude mcp add --transport http -H "Authorization: Bearer el_live_твой_ключ" edgelab https://mcp.edgelab.su/mcp
 ```
 
 Или добавь в конфиг Claude Code (`~/.claude/settings.json`):
@@ -143,10 +147,10 @@ claude mcp add edgelab-mcp --transport http https://mcp.edgelab.su/mcp
 
 | Tier | Tools | Rate limit |
 |---|---:|---:|
-| Free | 15 публичных | 30/min |
-| Edge | 63 | 60/min |
-| Pro | 65 | 120/min |
-| VIP | 65 | 300/min |
+| Free | 18 | 30/min |
+| Edge | 39 | 60/min |
+| Pro | 63 | 120/min |
+| VIP | 63 | 300/min |
 
 ## OAuth + API-ключ
 
