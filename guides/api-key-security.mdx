@@ -40,23 +40,23 @@ git log --all -p | grep -i "el_live_"
 ## Формат ключа
 
 ```text
-el_live_1a8c25f8b7165604
+el_live_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4
 ```
 
 - префикс: `el_live_`
-- хвост: `16` hex-символов
-- общая длина: `24`
+- хвост: `48` hex-символов
+- общая длина: `56`
 
 ## Где хранить
 
 <CodeGroup>
 ```bash Переменные окружения
-export EDGELAB_API_KEY="el_live_1a8c25f8b7165604"
+export EDGELAB_API_KEY="el_live_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4"
 ```
 
 ```bash Файл ~/.secrets/
 mkdir -p ~/.secrets
-echo 'EDGELAB_API_KEY=el_live_1a8c25f8b7165604' > ~/.secrets/edgelab.env
+echo 'EDGELAB_API_KEY=el_live_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4' > ~/.secrets/edgelab.env
 chmod 600 ~/.secrets/edgelab.env
 ```
 
@@ -64,7 +64,7 @@ chmod 600 ~/.secrets/edgelab.env
 op item create --category=api_credential \
   --title="EdgeLab API Key" \
   --url="https://mcp.edgelab.su/mcp" \
-  "credential=el_live_1a8c25f8b7165604"
+  "credential=el_live_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4"
 ```
 </CodeGroup>
 
@@ -78,7 +78,7 @@ op item create --category=api_credential \
 {
   "name": "rotate_api_key",
   "arguments": {
-    "prefix": "el_live_1a8c25f8"
+    "prefix": "el_live_a1b2c3d4"
   }
 }
 ```
@@ -95,7 +95,7 @@ op item create --category=api_credential \
 {
   "name": "delete_api_key",
   "arguments": {
-    "prefix": "el_live_1a8c25f8"
+    "prefix": "el_live_a1b2c3d4"
   }
 }
 ```
