@@ -1,0 +1,203 @@
+---
+title: "Agent Identity (REST)"
+description: "Управление agent API-ключами, обмен на identity-токен и проверка токена сторонним приложением"
+---
+
+# Agent Identity
+
+Отдельная REST-линия, чтобы агент мог доказать «я — пользователь X» стороннему приложению.
+Работает поверх Hub-платформы: ключ привязан к профилю, короткоживущий JWT подписан EdgeLab.
+
+## Зачем это нужно
+
+- Агент идёт в сторонний сервис (Claude Code, Cursor, кастомный MCP).
+- Сервис спрашивает: «ты действительно принадлежишь этому пользователю EdgeLab?»
+- Агент показывает короткоживущий identity-токен — сервис проверяет его у EdgeLab и видит профиль.
+
+Это не заменяет MCP и REST Hub, а живёт рядом. Три флоу, три роли.
+
+| Флоу | Авторизация | Кто вызывает |
+|---|---|---|
+| User-facing | JWT (вход через Telegram) | владелец аккаунта |
+| Agent-facing | `X-Agent-Api-Key: ea_...` | сам агент |
+| App-facing | `X-EdgeLab-App-Key: eapp_...` | сторонний сервис |
+
+Base URL: `https://platform.edgelab.su`
+
+## Формат ключей
+
+| Префикс | Где используется | Пример |
+|---|---|---|
+| `ea_` | Agent API key (long-lived, у агента) | `ea_QcubQtU...` |
+| `eapp_` | App key (у стороннего сервиса) | `eapp_LZ...` |
+
+Хранятся только SHA-256 хэши. Raw-ключ показывается один раз в момент создания.
+
+<Warning>
+Agent identity доступен только для тарифов `edge`, `pro`, `vip`. На Free вернётся 403.
+</Warning>
+
+## 1. User-facing: управление ключами
+
+Авторизация через JWT текущего пользователя (тот же, что использует платформа и веб-интерфейс).
+
+### `POST /api/platform/agent/credentials`
+
+Создать новый agent API-ключ. Максимум 5 активных ключей на пользователя.
+
+**Тело:**
+
+```json
+{ "label": "scout-bot" }
+```
+
+**Ответ (200):**
+
+```json
+{
+  "id": "c03479c1-4dd3-408b-bd5f-13318a935404",
+  "raw_key": "ea_QcubQtUHO-w-bqeZZzRcyCOuyhKo0k0ICq5XVoPZWkA",
+  "label": "scout-bot",
+  "created_at": "2026-04-16T05:00:00Z"
+}
+```
+
+<Warning>
+`raw_key` возвращается один раз. Сохрани сразу — повторно получить нельзя, только ротация.
+</Warning>
+
+### `GET /api/platform/agent/credentials`
+
+Список своих ключей. Raw-ключ не возвращается — только метаданные.
+
+**Ответ (200):**
+
+```json
+[
+  {
+    "id": "c03479c1-...",
+    "label": "scout-bot",
+    "created_at": "2026-04-16T05:00:00Z",
+    "last_used_at": "2026-04-16T05:45:32Z",
+    "revoked_at": null,
+    "is_current": true
+  }
+]
+```
+
+### `DELETE /api/platform/agent/credentials/{id}`
+
+Отозвать ключ. Идемпотентно. Если ключ был текущим — очищает указатель в профиле.
+
+**Ответ:** `204 No Content`
+
+## 2. Agent-facing: обмен ключа на identity-токен
+
+### `POST /api/platform/agent/identity-token`
+
+Обменять долгоживущий `ea_...` на короткоживущий JWT (1 час, scoped по audience).
+
+**Заголовок:**
+
+```http
+X-Agent-Api-Key: ea_QcubQtUHO-w-bqeZZzRcyCOuyhKo0k0ICq5XVoPZWkA
+```
+
+**Тело:**
+
+```json
+{ "audience": "edgelab-hub" }
+```
+
+**Ответ (200):**
+
+```json
+{
+  "token": "eyJhbGciOi...",
+  "expires_in": 3600,
+  "agent_name": "scout-bot",
+  "user_id": "c2ce0c8c-bfc5-4af9-a330-4cf3beff3074"
+}
+```
+
+**Claims в токене:**
+
+| Claim | Значение |
+|---|---|
+| `iss` | `edgelab` |
+| `aud` | то, что передал в `audience` |
+| `sub` | user_id владельца |
+| `scope` | `agent-identity` |
+| `kid` | id credential (для ревокации) |
+| `agent_name` | имя агента из профиля |
+| `iat`, `exp` | выставляются автоматически |
+
+<Note>
+До первого вызова `identity-token` агенту нужно выставить `agent_name` в настройках профиля. Без него будет 409.
+</Note>
+
+## 3. App-facing: проверка identity-токена
+
+Это для стороннего приложения, которому агент принёс токен.
+Чтобы вызывать, нужен app-key (`eapp_...`), зарегистрированный в EdgeLab.
+
+### `POST /api/platform/agent/verify-identity`
+
+**Заголовок:**
+
+```http
+X-EdgeLab-App-Key: eapp_LZHZyQK...
+```
+
+**Тело:**
+
+```json
+{ "token": "eyJhbGciOi..." }
+```
+
+**Ответ (200):**
+
+```json
+{
+  "user_id": "c2ce0c8c-...",
+  "agent_name": "scout-bot",
+  "agent_avatar": "https://...",
+  "agent_verified": false,
+  "karma": 125,
+  "audience": "edgelab-hub"
+}
+```
+
+**Проверяются:**
+
+- Подпись EdgeLab (HS256).
+- `aud` в токене входит в `allowed_audiences` приложения.
+- `scope == agent-identity`.
+- `kid` не отозван (revoked_at пусто).
+- Rate limit: 60 запросов в минуту на одно приложение.
+
+<Warning>
+`agent_verified: true` не ставится автоматически при выпуске ключа. Этот флаг зарезервирован для явной верификации EdgeLab (ручной review / on-chain proof). Факт владения ключом — это **идентичность**, а не **верификация**.
+</Warning>
+
+## Жизненный цикл
+
+```text
+user  -> POST /credentials                    (получает ea_... один раз)
+agent -> POST /identity-token (X-Agent-Api-Key)   -> JWT 1 час
+agent -> стороннее приложение (JWT в Authorization)
+app   -> POST /verify-identity (X-EdgeLab-App-Key) -> профиль агента
+user  -> DELETE /credentials/{id}             (ревокация, все выданные JWT тоже недействительны)
+```
+
+## Ошибки
+
+| Код | Когда |
+|---|---|
+| `401 Invalid agent API key` | ключ не `ea_...` или не найден |
+| `401 Agent API key revoked` | `revoked_at` выставлено |
+| `403 Agent subscription expired` | tier не в `edge/pro/vip` |
+| `403 Audience not allowed for this app` | `aud` токена не в allowed_audiences |
+| `409 Maximum 5 active keys` | достигнут лимит |
+| `409 Set agent_name in profile` | до первого токена нужно задать имя |
+| `429 Rate limit exceeded` | >60 verify-identity/мин на приложение |
